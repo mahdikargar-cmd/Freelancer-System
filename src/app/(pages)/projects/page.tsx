@@ -1,5 +1,6 @@
 import React from 'react'
 import {MdOutlineSearch} from "react-icons/md";
+import Link from "next/link";
 
 function Page() {
     return (
@@ -80,14 +81,16 @@ function Page() {
                     <div className={'grid grid-cols-6 mt-4'}>
                         <div className={'col-span-6 flex justify-between'}>
                             <p>زمان اتمام اگهی 30 روز</p>
-                            <button className={'text-2xl bg-blue-500 text-white rounded p-2 ms-14'}>بررسی پروژه</button>
-
+                            <Link href={'/projectCheckout'}>
+                                <button className={'text-2xl bg-blue-500 text-white rounded p-2 ms-14'}>بررسی پروژه
+                                </button>
+                            </Link>
                             <p>مهارت های مورد نیاز : c++ , .net, برنامه نویسی</p>
                         </div>
                     </div>
                     <div className={'grid grid-cols-6 mt-4'}>
                         <div className={'col-span-12 flex justify-between '}>
-                            <p>  تعداد پیشنهادات تا به الان 30 تا</p>
+                            <p> تعداد پیشنهادات تا به الان 30 تا</p>
 
                         </div>
                     </div>
@@ -104,14 +107,16 @@ function Page() {
                     <div className={'grid grid-cols-6 mt-4'}>
                         <div className={'col-span-6 flex justify-between'}>
                             <p>زمان اتمام اگهی 30 روز</p>
-                            <button className={'text-2xl bg-blue-500 text-white rounded p-2 ms-14'}>بررسی پروژه</button>
-
+                            <Link href={'/projectCheckout'}>
+                                <button className={'text-2xl bg-blue-500 text-white rounded p-2 ms-14'}>بررسی پروژه
+                                </button>
+                            </Link>
                             <p>مهارت های مورد نیاز : c++ , .net, برنامه نویسی</p>
                         </div>
                     </div>
                     <div className={'grid grid-cols-6 mt-4'}>
                         <div className={'col-span-12 flex justify-between '}>
-                            <p>  تعداد پیشنهادات تا به الان 30 تا</p>
+                            <p> تعداد پیشنهادات تا به الان 30 تا</p>
 
                         </div>
                     </div>
