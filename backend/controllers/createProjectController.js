@@ -1,24 +1,26 @@
-const createProjectModel = require('../models/createProjectModel');
+const Project = require('../models/createProjectModel'); // مدل پروژه خود را وارد کنید
 
 exports.createProject = async (req, res) => {
     try {
-        const {subject, category, deadline, description, file, skills, range} = req.body;
-        const Project = new createProjectModel({
-            subject,
-            category,
-            deadline,
-            description,
-            file,
-            skills,
-            range
-        });
+        const projectData = {
+            subject: req.body.subject,
+            category: req.body.category,
+            deadline: req.body.deadline,
+            description: req.body.description,
+            skills: req.body.skills,
+            range: {
+                min: parseFloat(req.body['range.min']), // تبدیل به عدد
+                max: parseFloat(req.body['range.max'])  // تبدیل به عدد
+            }
+            // اضافه کردن سایر ویژگی‌ها به اینجا
+        };
 
-        if (req.file) {
-            Project.file = req.file.path;
-        }
-        await Project.save();
-        res.status(201).json({message: "created successfully", Project});
+        const newProject = new Project(projectData);
+        await newProject.save();
+
+        res.status(201).json({ message: 'Project created successfully', project: newProject });
     } catch (error) {
-        res.status(500).json({message: "we have error to create project", error});
+        console.error("Error creating project:", error);
+        res.status(500).json({ message: 'Error creating project', error });
     }
 };

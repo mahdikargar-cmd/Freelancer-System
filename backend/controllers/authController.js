@@ -3,7 +3,7 @@ const bcrypt = require('bcryptjs');
 
 // Register a new user
 exports.register = async (req, res) => {
-    const { name, email, password } = req.body;
+    const { fullName, email, password } = req.body;  // تغییر به fullName
 
     try {
         const existingUser = await User.findOne({ email });
@@ -11,7 +11,10 @@ exports.register = async (req, res) => {
             return res.status(400).json({ message: "User already exists" });
         }
 
-        const user = new User({ name, email, password });
+        // Hashing password before saving
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        const user = new User({ name: fullName, email, password: hashedPassword });  // استفاده از fullName
         await user.save();
 
         res.status(201).json({ message: 'User registered successfully', user: { id: user._id, name: user.name, email: user.email } });
@@ -30,7 +33,7 @@ exports.login = async (req, res) => {
             return res.status(400).json({ message: 'Invalid credentials' });
         }
 
-        const isMatch = await bcrypt.compare(password, user.password);
+        const isMatch = await bcrypt.compare(password, user.password); // مقایسه رمز عبور هش شده
         if (!isMatch) {
             return res.status(400).json({ message: 'Invalid credentials' });
         }

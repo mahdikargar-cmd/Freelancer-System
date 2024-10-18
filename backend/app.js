@@ -10,6 +10,13 @@ connectDb();
 
 app.use(express.json());
 app.use(require('cors')());
+app.use((req, res, next) => {
+    console.log("Incoming Request:", {
+        body: req.body,
+        file: req.file
+    });
+    next();
+});
 
 // Routes
 app.use('/api/auth', authRoutes);

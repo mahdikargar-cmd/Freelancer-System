@@ -1,67 +1,147 @@
-import React from 'react'
+"use client";
+import React from 'react';
+import axios from "axios";
+import { useForm } from "react-hook-form";
 
-function CreateProject() {
+export default function CreateProject() {
+    const { register, handleSubmit, formState: { errors } } = useForm();
+
+    const onSubmit = async (data) => {
+        const formData = new FormData();
+        formData.append('subject', data.subject);
+        formData.append('category', data.category);
+        formData.append('deadline', data.deadline);
+        formData.append('description', data.description);
+        formData.append('skills', data.skills.split(",")); // تبدیل رشته کاما جداسازی شده به آرایه
+
+        // اضافه کردن مقادیر min و max
+        formData.append('range.min', data.range.min);
+        formData.append('range.max', data.range.max);
+
+        if (data.file[0]) {
+            formData.append('file', data.file[0]);
+        }
+
+        try {
+            console.log([...formData]); // بررسی داده‌های ارسال‌شده
+            const response = await axios.post('http://localhost:5000/api/createProject/create', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                }
+            });
+            console.log(response.data);
+            // مدیریت پاسخ
+        } catch (error) {
+            console.error("Error creating project:", error);
+        }
+    };
+
     return (
-        <div className={'p-2 bg-amber-50 mt-4'}>
-            <div className={'grid grid-cols-12 mt-4 '}>
-                <div className={'col-span-4 flex justify-evenly'}>
-                    <p>ثبت موضوع</p>
-                    <input type="text" placeholder={'موضوع دلخواه را وارد کنید'}
-                           className={'bg-gray-400 rounded placeholder:text-white placeholder:p-2'}/>
-                </div>
-                <div className={'col-span-4 flex justify-evenly placeholder:text-white text-white'}>
-                    <p>انتخاب دسته بندی</p>
-                    <select name="انتخاب دسته بندی" id=""
-                            className={'w-[200px] bg-gray-400 rounded placeholder:text-white placeholder:p-2'}>
-                        <option value="">برنامه نویسی</option>
-                        <option value="">طراحی اپلیکیشن</option>
+        <div>
+            <form onSubmit={handleSubmit(onSubmit)} encType="multipart/form-data">
+                <div className={'p-2 bg-amber-50 mt-4'}>
+                    {/* ورودی موضوع */}
+                    <div className={'grid grid-cols-12 mt-4'}>
+                        <div className={'col-span-4 flex justify-evenly'}>
+                            <p>ثبت موضوع</p>
+                            <input
+                                type="text"
+                                placeholder={'موضوع دلخواه را وارد کنید'}
+                                className={'bg-gray-400 rounded placeholder:text-white placeholder:p-2'}
+                                {...register("subject", { required: "این فیلد الزامی است" })}
+                            />
+                            {errors.subject && <span className="text-red-500">{errors.subject.message}</span>}
+                        </div>
 
-                    </select>
-                </div>
-                <div className={'col-span-4 flex justify-evenly'}>
-                    <p>زمان پیشنهادی تحویل پروژه </p>
-                    <input type="text"
-                           className={'bg-gray-400 rounded placeholder:text-white placeholder:p-2'}/>
-                </div>
-            </div>
-            <div className={'grid grid-cols-12 mt-8'}>
-                <div className={'col-span-12 flex justify-evenly items-center m-8'}>
-                    <p className={'text-[20px]'}> توضیحات راجب پروژه</p>
-                    <textarea
-                        className={'min-w-[1000px] min-h-64 bg-gray-400 rounded placeholder:text-white placeholder:p-2 '}/>
-                </div>
-            </div>
-            <div className={'grid grid-cols-12 mt-4 mb-5'}>
-                <div className={'col-span-6 flex justify-evenly'}>
-                    <p>آپلود فایل (اختیاری)</p>
-                    <input type="file"/>
-                </div>
-                <div className={'col-span-6 flex justify-evenly'}>
-                    <p>مهارت های مورد نیاز</p>
-                    <input className={'bg-gray-400 rounded placeholder:text-white placeholder:p-2'} type="text"/>
-                </div>
-            </div>
-            <div className={'grid grid-cols-12 mt-8 '}>
-                <div className={'col-span-12 flex justify-evenly'}>
-                    <p>میزان بودجه شما چقدر است؟</p>
-                    <div className={'flex justify-between'}>
-                        <input type="text"
-                               className={'bg-gray-400 rounded placeholder:text-white placeholder:p-2 ml-5'}/>
-                        <p>تا</p>
-                        <input type="text"
-                               className={'bg-gray-400 rounded placeholder:text-white placeholder:p-2 ms-5'}/>
+                        {/* انتخاب دسته بندی */}
+                        <div className={'col-span-4 flex justify-evenly'}>
+                            <p>انتخاب دسته بندی</p>
+                            <select
+                                {...register("category", { required: "این فیلد الزامی است" })}
+                                className={'w-[200px] bg-gray-400 rounded placeholder:text-white placeholder:p-2'}>
+                                <option value="">انتخاب کنید</option>
+                                <option value="programming">برنامه نویسی</option>
+                                <option value="app-design">طراحی اپلیکیشن</option>
+                            </select>
+                            {errors.category && <span className="text-red-500">{errors.category.message}</span>}
+                        </div>
+
+                        {/* ورودی زمان تحویل */}
+                        <div className={'col-span-4 flex justify-evenly'}>
+                            <p>زمان پیشنهادی تحویل پروژه</p>
+                            <input
+                                type="text"
+                                className={'bg-gray-400 rounded placeholder:text-white placeholder:p-2'}
+                                {...register("deadline", { required: "این فیلد الزامی است" })}
+                            />
+                            {errors.deadline && <span className="text-red-500">{errors.deadline.message}</span>}
+                        </div>
+                    </div>
+
+                    {/* توضیحات پروژه */}
+                    <div className={'grid grid-cols-12 mt-8'}>
+                        <div className={'col-span-12 flex justify-evenly items-center m-8'}>
+                            <p className={'text-[20px]'}>توضیحات راجب پروژه</p>
+                            <textarea
+                                {...register("description", { required: "این فیلد الزامی است" })}
+                                className={'min-w-[1000px] min-h-64 bg-gray-400 rounded placeholder:text-white placeholder:p-2 '}
+                            />
+                            {errors.description && <span className="text-red-500">{errors.description.message}</span>}
+                        </div>
+                    </div>
+
+                    {/* آپلود فایل و مهارت‌ها */}
+                    <div className={'grid grid-cols-12 mt-4 mb-5'}>
+                        <div className={'col-span-6 flex justify-evenly'}>
+                            <p>آپلود فایل (اختیاری)</p>
+                            <input type="file" {...register("file")} />
+                        </div>
+
+                        <div className={'col-span-6 flex justify-evenly'}>
+                            <p>مهارت های مورد نیاز</p>
+                            <input
+                                className={'bg-gray-400 rounded placeholder:text-white placeholder:p-2'}
+                                type="text"
+                                {...register("skills", { required: "این فیلد الزامی است" })} // مهارت‌ها
+                            />
+                            {errors.skills && <span className="text-red-500">{errors.skills.message}</span>}
+                        </div>
+                    </div>
+
+                    {/* محدوده بودجه */}
+                    <div className={'grid grid-cols-12 mt-8'}>
+                        <div className={'col-span-12 flex justify-evenly'}>
+                            <p>میزان بودجه شما چقدر است؟</p>
+                            <div className={'flex justify-between'}>
+                                <input
+                                    type="text"
+                                    className={'bg-gray-400 rounded placeholder:text-white placeholder:p-2 ml-5'}
+                                    {...register("range.min", { required: "این فیلد الزامی است" })} // handle min
+                                />
+                                <input
+                                    type="text"
+                                    className={'bg-gray-400 rounded placeholder:text-white placeholder:p-2 ms-5'}
+                                    {...register("range.max", { required: "این فیلد الزامی است" })} // handle max
+                                />
+                            </div>
+                            {errors.range && (
+                                <span className="text-red-500">
+                                    {errors.range.min?.message || errors.range.max?.message}
+                                </span>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* دکمه ارسال */}
+                    <div className={'grid grid-cols-12 mt-8 m-2'}>
+                        <div className={'col-span-12 flex justify-end'}>
+                            <button type={'submit'} className={'bg-blue-500 text-white p-2 rounded '}>
+                                ثبت پروژه و انتشار
+                            </button>
+                        </div>
                     </div>
                 </div>
-
-            </div>
-            <div className={'grid grid-cols-12 mt-8 m-2'}>
-                <div className={'col-span-12 flex justify-end'}>
-                    <button className={'bg-blue-500 text-white p-2 rounded '}>ثبت پروژه و انتشار</button>
-
-                </div>
-            </div>
+            </form>
         </div>
-    )
+    );
 }
-
-export default CreateProject
