@@ -14,7 +14,13 @@ function ProjectCheckout() {
         }
     }, [projectID]);
 
+const postData=async()=>{
+    try{
 
+    }catch(error){
+
+    }
+}
     const fetchData = async () => {
         try {
             const response = await axios.get(`http://localhost:5000/api/createProject/${projectID}`);
