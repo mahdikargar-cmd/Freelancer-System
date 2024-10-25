@@ -10,17 +10,19 @@ dotenv.config();
 
 const app = express();
 connectDb();
-
 app.use(express.json());
 app.use(cors());
 
 app.use((req: Request, res: Response, next: NextFunction) => {
+    console.log("Incoming Request Body:", req.body);
+
     console.log("Incoming Request:", {
         body: req.body,
-        file: req.file
+        ...(req.file && { file: req.file })  // Log 'file' only if it exists
     });
     next();
 });
+
 
 // Routes
 app.use('/api/auth', authRoutes);

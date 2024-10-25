@@ -1,17 +1,21 @@
 "use client";
 import axios from "axios";
-import {useEffect, useState} from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
+import { useRouter } from "next/navigation"; // مطمئن شو از "next/navigation" استفاده می‌کنی
+
 export default function Login() {
     const {
         register,
         handleSubmit,
         reset,
-        formState: {errors}
+        formState: { errors }
     } = useForm();
+    const router = useRouter(); // استفاده از useRouter
     const [sign, setSign] = useState(false); // false: login, true: signup
     const [error, setError] = useState("");
     const [message, setMessage] = useState("");
+
     // Change between login and signup modes
     const changeMode = () => {
         setSign(!sign);
@@ -19,29 +23,36 @@ export default function Login() {
         setMessage("");
         reset();
     };
-    // Handle form submission for both login and signup
+
     const onSubmit = async (data) => {
         setError("");
         setMessage("");
-        // فیلد fullName را فقط در صورت ثبت‌نام ارسال کنید
-        const payload = sign ? {name: data.fullName, email: data.email, password: data.password} : {
-            email: data.email,
-            password: data.password
-        };
-        console.log(payload)
+
+        const payload = sign
+            ? { name: data.fullName, email: data.email, password: data.password }
+            : { email: data.email, password: data.password };
+
+        console.log(payload);
         const url = sign
             ? "http://localhost:5000/api/auth/register"
             : "http://localhost:5000/api/auth/login";
+
         try {
-            const response = await axios.post(url, payload);
+            const response = await axios.post(url, payload, {
+                headers: { 'Content-Type': 'application/json' }
+            });
+            console.log(response.data);
             setMessage(sign ? "ثبت نام موفقیت آمیز بود!" : "ورود موفقیت آمیز بود!");
+            await router.push("/"); // به صفحه اصلی ریدایرکت کن
         } catch (error) {
             setError(error.response?.data?.message || "مشکلی پیش آمده است");
         }
     };
+
     useEffect(() => {
         console.log("فرم تغییر کرد ، حالت فعلی ", sign ? "ثبت نام" : "ورود");
     }, [sign]);
+
     return (
         <div className="grid grid-cols-12 mt-10 m-32 h-[520px] relative shadow-xl rounded-xl overflow-hidden">
             {/* Left Side */}
@@ -88,7 +99,7 @@ export default function Login() {
                                 <label className="block mb-4">
                                     <input
                                         type="text"
-                                        {...register("fullName", {required: true})}
+                                        {...register("fullName", { required: true })}
                                         placeholder="نام و نام خانوادگی"
                                         className="w-full p-2 border-0 rounded  shadow-xl"
                                     />
@@ -101,7 +112,7 @@ export default function Login() {
                                 <label className="block mb-4">
                                     <input
                                         type="email"
-                                        {...register("email", {required: "آدرس ایمیل لازم است"})}
+                                        {...register("email", { required: "آدرس ایمیل لازم است" })}
                                         placeholder="Email Address"
                                         className="w-full p-2 border-0 rounded  shadow-xl"
                                     />
@@ -112,7 +123,7 @@ export default function Login() {
                                 <label className="block mb-4">
                                     <input
                                         type="password"
-                                        {...register("password", {required: true})}
+                                        {...register("password", { required: true })}
                                         placeholder="رمز عبور"
                                         className="w-full p-2 border-0 rounded shadow-md"
                                     />
@@ -126,7 +137,7 @@ export default function Login() {
                                 <label className="block mb-4">
                                     <input
                                         type="email"
-                                        {...register("email", {required: true})}
+                                        {...register("email", { required: true })}
                                         placeholder="آدرس ایمیل"
                                         className="w-full p-2 border-0 rounded  shadow-xl"
                                     />
@@ -137,7 +148,7 @@ export default function Login() {
                                 <label className="block mb-4">
                                     <input
                                         type="password"
-                                        {...register("password", {required: true})}
+                                        {...register("password", { required: true })}
                                         placeholder="رمز عبور"
                                         className="w-full p-2 border-0 rounded shadow-md"
                                     />
