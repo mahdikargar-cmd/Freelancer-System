@@ -5,7 +5,7 @@ interface ICreateProject extends Document {
   category: string;
   deadline: number;
   description: string;
-  file?: string; // Optional file field
+  file?: string;
   skills: string[];
   range: {
     min: number;
@@ -19,7 +19,7 @@ const createSchema: Schema = new mongoose.Schema({
   category: { type: String, required: true },
   deadline: { type: Number, required: true },
   description: { type: String, required: true },
-  file: { type: String, required: false }, // Optional
+  file: { type: String, required: false },
   skills: { type: [String], required: true },
   range: {
     min: { type: Number, required: true },

@@ -25,7 +25,7 @@ const checkFileType = (file: Express.Multer.File, cb: FileFilterCallback): void 
 
 const upload = multer({
   storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // Max file size (e.g., 10MB)
+  limits: { fileSize: 100 * 1024 * 1024 }, // Max file size (e.g., 10MB)
   fileFilter: (req: Request, file, cb: FileFilterCallback) => {
     checkFileType(file, cb);
   },

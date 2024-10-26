@@ -9,12 +9,12 @@ class CreateProjectController {
         category: req.body.category,
         deadline: req.body.deadline,
         description: req.body.description,
-        skills: req.body.skills,
+        skills: Array.isArray(req.body.skills) ? req.body.skills : req.body.skills.split(','),
         range: {
-          min: parseFloat(req.body.range.min),
-          max: parseFloat(req.body.range.max),
+          min: parseFloat(req.body.rangeMin),
+          max: parseFloat(req.body.rangeMax),
         },
-        file: req.file ? req.file.filename : undefined // Optional file handling
+        file: req.file ? req.file.filename : undefined
       };
 
       const newProject = new Project(projectData);

@@ -14,11 +14,11 @@ export default function CreateProject() {
         formData.append('description', data.description);
         formData.append('skills', data.skills.split(",")); // تبدیل رشته کاما جداسازی شده به آرایه
 
-        // اضافه کردن مقادیر min و max
-        formData.append('range.min', data.range.min);
-        formData.append('range.max', data.range.max);
+        // ارسال محدوده به صورت کلید‌های جداگانه
+        formData.append('rangeMin', data.range.min);
+        formData.append('rangeMax', data.range.max);
 
-        if (data.file[0]) {
+        if (data.file && data.file[0]) {
             formData.append('file', data.file[0]);
         }
 
@@ -29,10 +29,9 @@ export default function CreateProject() {
                     'Content-Type': 'multipart/form-data',
                 }
             });
-            console.log(response.data);
-            // مدیریت پاسخ
+            console.log("Project created successfully:", response.data);
         } catch (error) {
-            console.error("Error creating project:", error);
+            console.error("Error creating project:", error.response?.data || error.message);
         }
     };
 
@@ -40,7 +39,6 @@ export default function CreateProject() {
         <div>
             <form onSubmit={handleSubmit(onSubmit)} encType="multipart/form-data">
                 <div className={'p-2 bg-amber-50 mt-4'}>
-                    {/* ورودی موضوع */}
                     <div className={'grid grid-cols-12 mt-4'}>
                         <div className={'col-span-4 flex justify-evenly'}>
                             <p>ثبت موضوع</p>
@@ -53,7 +51,6 @@ export default function CreateProject() {
                             {errors.subject && <span className="text-red-500">{errors.subject.message}</span>}
                         </div>
 
-                        {/* انتخاب دسته بندی */}
                         <div className={'col-span-4 flex justify-evenly'}>
                             <p>انتخاب دسته بندی</p>
                             <select
@@ -66,7 +63,6 @@ export default function CreateProject() {
                             {errors.category && <span className="text-red-500">{errors.category.message}</span>}
                         </div>
 
-                        {/* ورودی زمان تحویل */}
                         <div className={'col-span-4 flex justify-evenly'}>
                             <p>زمان پیشنهادی تحویل پروژه</p>
                             <input
@@ -78,7 +74,6 @@ export default function CreateProject() {
                         </div>
                     </div>
 
-                    {/* توضیحات پروژه */}
                     <div className={'grid grid-cols-12 mt-8'}>
                         <div className={'col-span-12 flex justify-evenly items-center m-8'}>
                             <p className={'text-[20px]'}>توضیحات راجب پروژه</p>
@@ -90,7 +85,6 @@ export default function CreateProject() {
                         </div>
                     </div>
 
-                    {/* آپلود فایل و مهارت‌ها */}
                     <div className={'grid grid-cols-12 mt-4 mb-5'}>
                         <div className={'col-span-6 flex justify-evenly'}>
                             <p>آپلود فایل (اختیاری)</p>
@@ -102,13 +96,12 @@ export default function CreateProject() {
                             <input
                                 className={'bg-gray-400 rounded placeholder:text-white placeholder:p-2'}
                                 type="text"
-                                {...register("skills", { required: "این فیلد الزامی است" })} // مهارت‌ها
+                                {...register("skills", { required: "این فیلد الزامی است" })}
                             />
                             {errors.skills && <span className="text-red-500">{errors.skills.message}</span>}
                         </div>
                     </div>
 
-                    {/* محدوده بودجه */}
                     <div className={'grid grid-cols-12 mt-8'}>
                         <div className={'col-span-12 flex justify-evenly'}>
                             <p>میزان بودجه شما چقدر است؟</p>
@@ -116,12 +109,12 @@ export default function CreateProject() {
                                 <input
                                     type="text"
                                     className={'bg-gray-400 rounded placeholder:text-white placeholder:p-2 ml-5'}
-                                    {...register("range.min", { required: "این فیلد الزامی است" })} // handle min
+                                    {...register("range.min", { required: "این فیلد الزامی است" })}
                                 />
                                 <input
                                     type="text"
                                     className={'bg-gray-400 rounded placeholder:text-white placeholder:p-2 ms-5'}
-                                    {...register("range.max", { required: "این فیلد الزامی است" })} // handle max
+                                    {...register("range.max", { required: "این فیلد الزامی است" })}
                                 />
                             </div>
                             {errors.range && (
@@ -132,7 +125,6 @@ export default function CreateProject() {
                         </div>
                     </div>
 
-                    {/* دکمه ارسال */}
                     <div className={'grid grid-cols-12 mt-8 m-2'}>
                         <div className={'col-span-12 flex justify-end'}>
                             <button type={'submit'} className={'bg-blue-500 text-white p-2 rounded '}>

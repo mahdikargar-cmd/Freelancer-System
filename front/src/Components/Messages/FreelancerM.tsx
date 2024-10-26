@@ -1,26 +1,33 @@
-import React, {useEffect} from "react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
 
 export const FreelancerM = () => {
-    useEffect(()=>{
+    const [gData, setGData] = useState([]);
 
-    })
-    const getData=async (data)=>{
-        const response=axios.get('http://')
-    }
+    useEffect(() => {
+        getData();
+    }, []); // افزودن آرایه خالی به عنوان وابستگی
+
+    const getData = async () => {
+        const response = await axios.get('http://localhost:5000/api/suggestProject/getSuggest');
+        setGData(response.data.projects); // داده‌ها را از پروژه‌ها بخوانید
+    };
+
     return (
         <>
-            <div className={'bg-gray-300 p-2 mt-4 m-2 '}>
-                <div className={'grid grid-cols-12'}>
-                    <div className={'col-span-12 flex justify-between'}>
-                        <p>پروژه فریلنسر</p>
-                        <p>تاریخ 30 اردیبهشت</p>
+            {gData.map((item, index) => (
+                <div key={index} className={'bg-gray-300 p-2 mt-4 m-2 '}>
+                    <div className={'grid grid-cols-12'}>
+                        <div className={'col-span-12 flex justify-between'}>
+                            <p>{item.subject}</p>
+                            <p>تاریخ {new Date(item.created_At).toLocaleDateString("fa-IR")}</p>
+                        </div>
+                    </div>
+                    <div className={'grid grid-cols-12'}>
+                        <div className={'col-span-12 flex'}>{item.description}</div>
                     </div>
                 </div>
-                <div className={'grid grid-cols-12'}>
-                    <div className={'col-span-12 flex'}>اخرین پیام ارسالی در چت</div>
-                </div>
-            </div>
+            ))}
         </>
     );
 };

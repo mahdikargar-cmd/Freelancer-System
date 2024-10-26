@@ -21,16 +21,12 @@ class SuggestprojectController {
     }
 
     async getSuggestProjectController(req: Request, res: Response): Promise<void> {
-        const {}=req.body;
         try {
-            const SuggestGet = await SuggestProjectModel.find({})
-
-
+            const suggestProjects = await SuggestProjectModel.find(); // دریافت همه پروژه‌ها بدون فیلتر خاص
+            res.status(200).json({ projects: suggestProjects }); // ارسال داده‌ها با کد 200
         } catch (error) {
-
+            res.status(500).json({ message: "Error in catch:", error });
         }
-
-
     }
 }
 

@@ -29,7 +29,7 @@ export default function Login() {
         setMessage("");
 
         const payload = sign
-            ? { name: data.fullName, email: data.email, password: data.password }
+            ? { name: data.fullName, email: data.email, password: data.password, role: 'freelancer' }
             : { email: data.email, password: data.password };
 
         console.log(payload);
