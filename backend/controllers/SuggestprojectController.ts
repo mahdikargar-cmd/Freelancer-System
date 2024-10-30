@@ -1,31 +1,43 @@
-import {Request, Response} from 'express';
+import { Request, Response } from 'express';
 import SuggestProjectModel from '../models/SuggestProject';
 
 class SuggestprojectController {
-    async resgisterSuggestProjectController(req: Request, res: Response): Promise<void> {
+    async registerSuggestProjectController(req: Request, res: Response): Promise<void> {
         try {
-            const suggestData = {
-                subject: req.body.subject,
-                deadline: req.body.deadline,
-                description: req.body.description,
-                price: req.body.price
-            };
+            const { subject, deadline, description, price, user } = req.body;
 
+            if (!subject || !deadline || !description || !price || !user) {
+                res.status(400).json({ message: "All fields are required." });
+                return;
+            }
+
+
+
+            const suggestData = { subject, deadline, description, price, user };
             const newProject = new SuggestProjectModel(suggestData);
             await newProject.save();
+            console.log("Request Body:", req.body);
 
-            res.status(201).json({message: 'submitted successfully', project: newProject});
+            res.status(201).json({ message: 'Project suggestion submitted successfully', project: newProject });
         } catch (error) {
-            res.status(500).json({message: 'error in suggestProject', error});
+            console.error("Error in registerSuggestProjectController:", error);
+            res.status(500).json({
+                message: 'Error in suggestProject submission',
+                error: (error as Error).message
+            });
         }
     }
 
     async getSuggestProjectController(req: Request, res: Response): Promise<void> {
         try {
-            const suggestProjects = await SuggestProjectModel.find(); // دریافت همه پروژه‌ها بدون فیلتر خاص
-            res.status(200).json({ projects: suggestProjects }); // ارسال داده‌ها با کد 200
+            const suggestProjects = await SuggestProjectModel.find();
+            res.status(200).json({ projects: suggestProjects });
         } catch (error) {
-            res.status(500).json({ message: "Error in catch:", error });
+            console.error("Error fetching project suggestions:", error);
+            res.status(500).json({
+                message: "Error in fetching project suggestions",
+                error: (error as Error).message
+            });
         }
     }
 }

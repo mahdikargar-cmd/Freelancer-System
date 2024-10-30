@@ -2,16 +2,20 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { useRouter } from "next/navigation"; // مطمئن شو از "next/navigation" استفاده می‌کنی
+import { useRouter } from "next/navigation";
+import {loginSuccess} from "@/app/redux/authSlice";
+import {useDispatch} from "react-redux";
 
 export default function Login() {
+    const dispatch = useDispatch();
+
     const {
         register,
         handleSubmit,
         reset,
         formState: { errors }
     } = useForm();
-    const router = useRouter(); // استفاده از useRouter
+    const router = useRouter();
     const [sign, setSign] = useState(false); // false: login, true: signup
     const [error, setError] = useState("");
     const [message, setMessage] = useState("");
@@ -43,6 +47,7 @@ export default function Login() {
             });
             console.log(response.data);
             setMessage(sign ? "ثبت نام موفقیت آمیز بود!" : "ورود موفقیت آمیز بود!");
+            dispatch(loginSuccess());
             await router.push("/"); // به صفحه اصلی ریدایرکت کن
         } catch (error) {
             setError(error.response?.data?.message || "مشکلی پیش آمده است");

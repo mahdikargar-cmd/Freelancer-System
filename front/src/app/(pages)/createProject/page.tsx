@@ -30,6 +30,7 @@ export default function CreateProject() {
                 }
             });
             console.log("Project created successfully:", response.data);
+            alert("با موفقیت ثبت شد")
         } catch (error) {
             console.error("Error creating project:", error.response?.data || error.message);
         }

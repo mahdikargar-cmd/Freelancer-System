@@ -5,7 +5,7 @@ interface ISuggestProject extends Document {
     deadline: string;
     description: string;
     price: string;
-    user: mongoose.Types.ObjectId; // آیدی کاربر ثبت‌کننده پروژه
+    user: mongoose.Types.ObjectId; 
     created_At?: Date;
 }
 

@@ -1,16 +1,19 @@
-'use client'; // This line is important for client components
 import React from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import Link from 'next/link';
 import Image from 'next/image';
 import logo from '../../public/assets/img/logo.png';
 import { FiLogIn } from 'react-icons/fi';
 import { FaRegMessage } from 'react-icons/fa6';
+import {logout} from "@/app/redux/authSlice";
 
 function Navbar() {
-    // دریافت وضعیت لاگین از Redux Store
+    const dispatch = useDispatch();
     const isLoggedIn = useSelector((state) => state.auth.isLoggedIn);
-    console.log("Rendering Navbar, isLoggedIn:", isLoggedIn); // Debugging log
+
+    const handleLogout = () => {
+        dispatch(logout()); // Dispatch logout action
+    };
 
     return (
         <div className={'grid grid-cols-12 text-xl text-black shadow-xl mt-4 bg-amber-50'}>
@@ -31,7 +34,15 @@ function Navbar() {
                     <FaRegMessage />
                 </Link>
                 {isLoggedIn ? (
-                    <span className={'ml-5 flex items-center'}>پنل من</span> // نمایش پنل کاربر
+                    <>
+                        <span className={'ml-5 flex items-center'}>پنل من</span>
+                        <button
+                            onClick={handleLogout}
+                            className={'ml-5 flex items-center text-red-500'}
+                        >
+                            خروج
+                        </button>
+                    </>
                 ) : (
                     <Link href={'/login'} className={'ml-5 flex items-center'}>
                         ورود<FiLogIn className={'ml-5 ms-2'} />

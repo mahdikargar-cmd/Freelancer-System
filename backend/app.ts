@@ -36,13 +36,16 @@ io.on("connection", (socket: Socket) => {
 
 connectDb();
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+  origin: "http://localhost:3000",
+  methods: ["GET", "POST"]
+}));
 
 app.use((req: Request, res: Response, next: NextFunction) => {
   console.log("Incoming Request Body:", req.body);
   console.log("Incoming Request:", {
     body: req.body,
-    ...(req.file && { file: req.file }) // Log 'file' only if it exists
+    ...(req.file && { file: req.file })
   });
   next();
 });

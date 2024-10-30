@@ -1,8 +1,16 @@
 import express from 'express';
-import SuggestprojectController from '../controllers/SuggestprojectController';
+import suggestprojectController from '../controllers/SuggestprojectController'; // Default import
 
 const router = express.Router();
 
-router.post('/suggestProject', SuggestprojectController.resgisterSuggestProjectController);
-router.get('/getSuggest', SuggestprojectController.getSuggestProjectController)
+router.post(
+    '/createSuggest',
+    suggestprojectController.registerSuggestProjectController.bind(suggestprojectController)
+);
+
+router.get(
+    '/getSuggest',
+    suggestprojectController.getSuggestProjectController.bind(suggestprojectController)
+);
+
 export default router;
