@@ -12,5 +12,8 @@ router.get(
     '/getSuggest',
     suggestprojectController.getSuggestProjectController.bind(suggestprojectController)
 );
-
+router.get(
+    '/getSuggest/:id',
+    suggestprojectController.getSuggestProjectById.bind(suggestprojectController)
+);
 export default router;

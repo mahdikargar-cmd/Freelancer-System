@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import SuggestProjectModel from '../models/SuggestProject';
 import mongoose from "mongoose";
+import Project from "../models/createProjectModel";
 
 class SuggestprojectController {
     async registerSuggestProjectController(req: Request, res: Response): Promise<void> {
@@ -41,6 +42,20 @@ class SuggestprojectController {
                 message: "Error in fetching project suggestions",
                 error: (error as Error).message
             });
+        }
+    }
+
+
+    async getSuggestProjectById(req: Request, res: Response): Promise<void> {
+        try {
+            const project = await Project.findById(req.params.id);
+            if (!project) {
+                res.status(404).json({ message: 'Project not found' });
+                return;
+            }
+            res.status(200).json(project);
+        } catch (error) {
+            res.status(500).json({ message: 'Error fetching project', error });
         }
     }
 }

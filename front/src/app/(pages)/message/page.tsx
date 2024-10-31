@@ -1,8 +1,8 @@
 "use client"
 import React, {useEffect, useState} from "react";
+import io from "socket.io-client";
 import {FreelancerM} from "@/Components/Messages/FreelancerM";
 import {KarfarmaM} from "@/Components/Messages/KarfarmaM";
-import io from "socket.io-client";
 
 const socket = io("http://localhost:5000");
 
@@ -12,6 +12,9 @@ function Message() {
     const [isChatActive, setIsChatActive] = useState(false);
     const [message, setMessage] = useState("");
     const [chatMessage, setChatMessage] = useState([]);
+    const [chatMessages, setChatMessages] = useState([]);
+
+    const [selectedSuggestion, setSelectedSuggestion] = useState(null);
 
     const FreelancerMessage = () => {
         setFreelancerM(true);
@@ -22,46 +25,36 @@ function Message() {
     const KarfarmaMessageToggle = () => {
         setKarfarmaM(true);
         setFreelancerM(false);
+        setIsChatActive(false); // To hide chat area initially until a suggestion is selected
+    };
+
+    // Handling suggestion selection
+    const handleSuggestionClick = (suggestion) => {
+        setSelectedSuggestion(suggestion);
         setIsChatActive(true);
     };
 
-    // ارسال پیام به سرور با نقش و متن پیام
+    // Sending message logic
     const sendMessage = () => {
         if (message.trim()) {
             const role = freelancerM ? "freelancer" : "karfarma";
-            const messageData = {text: message, role: role};
+            const messageData = { text: message, role: role, suggestionId: selectedSuggestion._id };
 
-            // ارسال پیام به سرور
             socket.emit("sendMessage", messageData);
-
-            // اگر فریلنسر باشد، اطلاعات پروژه را ارسال می‌کنیم
-            if (freelancerM) {
-                const projectDetails = { /* اطلاعات پروژه */}; // اطلاعات پروژه را از اینجا بگیرید
-                socket.emit("sendProjectDetails", projectDetails);
-            }
-
-            setMessage(""); // پاک کردن پیام ورودی
+            setChatMessages((prev) => [...prev, messageData]);
+            setMessage("");
         }
     };
 
-    // دریافت پیام از سرور
     useEffect(() => {
         socket.on("receiveMessage", (msg) => {
             setChatMessage((prevMessages) => [...prevMessages, msg]);
         });
 
-        socket.on("receiveProjectDetails", (projectDetails) => {
-            setChatMessage((prevMessages) => [
-                ...prevMessages,
-                {role: "freelancer", text: `پروژه جدید: ${projectDetails.subject} - ${projectDetails.description}`}
-            ]);
-        });
-
         return () => {
             socket.off("receiveMessage");
-            socket.off("receiveProjectDetails");
         };
-    }, []);
+    }, [selectedSuggestion]);
 
     return (
         <div className={"mt-4 pb-5 flex justify-center"}>
@@ -74,46 +67,55 @@ function Message() {
                 <div className={"grid grid-cols-12 h-[500px] m-4"}>
                     <div className={"col-span-4 flex flex-col"}>
                         <div className={"flex justify-evenly ml-2"}>
-                            <button
-                                onClick={FreelancerMessage}
-                                className={"bg-gray-600 p-2 rounded-full text-white"}
-                            >
+                            <button onClick={FreelancerMessage} className={"bg-gray-600 p-2 rounded-full text-white"}>
                                 پیام های فریلنسری
                             </button>
-                            <button
-                                onClick={KarfarmaMessageToggle}
-                                className={"bg-gray-600 p-2 rounded-full text-white"}
-                            >
+                            <button onClick={KarfarmaMessageToggle}
+                                    className={"bg-gray-600 p-2 rounded-full text-white"}>
                                 پیام های کارفرمایی
                             </button>
                         </div>
-                        <button>{freelancerM && <FreelancerM/>}</button>
-                        <button>{karfarmaM && <KarfarmaM/>}</button>
+                        {freelancerM && <FreelancerM/>}
+                        {karfarmaM && <KarfarmaM onSuggestionClick={handleSuggestionClick}/>}
                     </div>
-                    <div
-                        className={`col-span-8 bg-gray-200 flex items-center justify-center chat ${
-                            isChatActive ? "" : "hidden"
-                        }`}
-                    >
-                        <div className="flex-1 overflow-y-auto p-4">
+                    <div className={`col-span-8 bg-gray-200 chat ${isChatActive ? "" : "hidden"}`}>
+                        {selectedSuggestion ? (
+                            <div className={'border-amber-200 border-2  bg-white m-6 rounded-full p-4'}>
+                                <div className={'grid grid-cols-12'}>
+                                    <div className={'col-span-12 flex justify-center'}>
+                                        <h3>پیشنهاد پروژه: {selectedSuggestion.subject}</h3>
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-12">
+
+                                    <div className={'col-span-12 flex justify-between'}>
+                                        <p>قیمت: {selectedSuggestion.price}</p>
+                                        <p>مدت زمان: {selectedSuggestion.deadline} روز</p>
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-12">
+
+                                    <div className={'col-span-12 pb-4 p-2'}>
+                                        <p>توضیحات: {selectedSuggestion.description}</p>
+                                    </div>
+                                </div>
+
+
+                            </div>
+                        ) : (
+                            <p>لطفا یک پیشنهاد را انتخاب کنید</p>
+                        )}
+                        <div className="overflow-y-auto p-4">
                             {chatMessage.map((msg, index) => (
-                                <div
-                                    key={index}
-                                    className={`p-2 ${msg.role === "freelancer" ? "text-right" : "text-left"}`}
-                                >
-                                    <span>
-                                        {msg.role === "freelancer" ? "فریلنسر" : "کارفرما"}: {msg.text}
-                                    </span>
+                                <div key={index}
+                                     className={`p-2 ${msg.role === "freelancer" ? "text-right" : "text-left"}`}>
+                                    <span>{msg.role === "freelancer" ? "فریلنسر" : "کارفرما"}: {msg.text}</span>
                                 </div>
                             ))}
                         </div>
-
-                        </div>
-
-
-
+                    </div>
                 </div>
-                <div className="p-2 grid grid-cols-12 bg-gray-300 m-6  shadow-2xl">
+                <div className="p-2 grid grid-cols-12 bg-gray-300 m-6 shadow-2xl">
                     <div className={'col-span-12 flex'}>
                         <input
                             type="text"
@@ -122,9 +124,7 @@ function Message() {
                             className="flex-1 p-2 border rounded"
                             placeholder="پیام خود را وارد کنید"
                         />
-                        <button onClick={sendMessage} className="bg-blue-500 text-white p-2 rounded ml-2">
-                            ارسال
-                        </button>
+                        <button onClick={sendMessage} className="bg-blue-500 text-white p-2 rounded ml-2">ارسال</button>
                     </div>
                 </div>
             </div>
