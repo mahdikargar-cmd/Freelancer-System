@@ -1,5 +1,4 @@
 "use client"
-
 import React, {useEffect, useState} from "react";
 import {FreelancerM} from "@/Components/Messages/FreelancerM";
 import {KarfarmaM} from "@/Components/Messages/KarfarmaM";
@@ -10,7 +9,7 @@ const socket = io("http://localhost:5000");
 function Message() {
     const [freelancerM, setFreelancerM] = useState(false);
     const [karfarmaM, setKarfarmaM] = useState(false);
-    const [isChatActive, setIsChatActive] = useState(false); // حالت جدید برای فعال‌سازی چت‌باکس
+    const [isChatActive, setIsChatActive] = useState(false);
     const [message, setMessage] = useState("");
     const [chatMessage, setChatMessage] = useState([]);
 
@@ -26,21 +25,42 @@ function Message() {
         setIsChatActive(true);
     };
 
-    //ارسال پیام به سرور با نقش و متن پیام
+    // ارسال پیام به سرور با نقش و متن پیام
     const sendMessage = () => {
         if (message.trim()) {
             const role = freelancerM ? "freelancer" : "karfarma";
-            socket.emit("sendMessage", {text: message, role: role});
+            const messageData = {text: message, role: role};
+
+            // ارسال پیام به سرور
+            socket.emit("sendMessage", messageData);
+
+            // اگر فریلنسر باشد، اطلاعات پروژه را ارسال می‌کنیم
+            if (freelancerM) {
+                const projectDetails = { /* اطلاعات پروژه */}; // اطلاعات پروژه را از اینجا بگیرید
+                socket.emit("sendProjectDetails", projectDetails);
+            }
+
             setMessage(""); // پاک کردن پیام ورودی
         }
     };
 
-    // دریافت پیام از سرور و فیلتر بر اساس نقش کاربر
+    // دریافت پیام از سرور
     useEffect(() => {
         socket.on("receiveMessage", (msg) => {
             setChatMessage((prevMessages) => [...prevMessages, msg]);
         });
-        return () => socket.off("receiveMessage");
+
+        socket.on("receiveProjectDetails", (projectDetails) => {
+            setChatMessage((prevMessages) => [
+                ...prevMessages,
+                {role: "freelancer", text: `پروژه جدید: ${projectDetails.subject} - ${projectDetails.description}`}
+            ]);
+        });
+
+        return () => {
+            socket.off("receiveMessage");
+            socket.off("receiveProjectDetails");
+        };
     }, []);
 
     return (
@@ -79,28 +99,32 @@ function Message() {
                             {chatMessage.map((msg, index) => (
                                 <div
                                     key={index}
-                                    className={`p-2 ${
-                                        msg.role === "freelancer" ? "text-right" : "text-left"
-                                    }`}
+                                    className={`p-2 ${msg.role === "freelancer" ? "text-right" : "text-left"}`}
                                 >
-                  <span>
-                    {msg.role === "freelancer" ? "فریلنسر" : "کارفرما"}: {msg.text}
-                  </span>
+                                    <span>
+                                        {msg.role === "freelancer" ? "فریلنسر" : "کارفرما"}: {msg.text}
+                                    </span>
                                 </div>
                             ))}
                         </div>
-                        <div className="p-2 flex">
-                            <input
-                                type="text"
-                                value={message}
-                                onChange={(e) => setMessage(e.target.value)}
-                                className="flex-1 p-2 border rounded"
-                                placeholder="پیام خود را وارد کنید"
-                            />
-                            <button onClick={sendMessage} className="bg-blue-500 text-white p-2 rounded ml-2">
-                                ارسال
-                            </button>
+
                         </div>
+
+
+
+                </div>
+                <div className="p-2 grid grid-cols-12 bg-gray-300 m-6  shadow-2xl">
+                    <div className={'col-span-12 flex'}>
+                        <input
+                            type="text"
+                            value={message}
+                            onChange={(e) => setMessage(e.target.value)}
+                            className="flex-1 p-2 border rounded"
+                            placeholder="پیام خود را وارد کنید"
+                        />
+                        <button onClick={sendMessage} className="bg-blue-500 text-white p-2 rounded ml-2">
+                            ارسال
+                        </button>
                     </div>
                 </div>
             </div>

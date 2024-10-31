@@ -6,11 +6,11 @@ export const FreelancerM = () => {
 
     useEffect(() => {
         getData();
-    }, []); // افزودن آرایه خالی به عنوان وابستگی
+    }, []);
 
     const getData = async () => {
         const response = await axios.get('http://localhost:5000/api/suggestProject/getSuggest');
-        setGData(response.data.projects); // داده‌ها را از پروژه‌ها بخوانید
+        setGData(response.data.projects);
     };
 
     return (

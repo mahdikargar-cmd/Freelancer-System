@@ -1,23 +1,26 @@
 import { Request, Response } from 'express';
 import SuggestProjectModel from '../models/SuggestProject';
+import mongoose from "mongoose";
 
 class SuggestprojectController {
     async registerSuggestProjectController(req: Request, res: Response): Promise<void> {
         try {
             const { subject, deadline, description, price, user } = req.body;
 
-            if (!subject || !deadline || !description || !price || !user) {
+            // بررسی صحت مقدار user
+            if (!user || !mongoose.Types.ObjectId.isValid(user)) {
+                res.status(400).json({ message: "Invalid or missing user ID." });
+                return;
+            }
+
+            if (!subject || !deadline || !description || !price) {
                 res.status(400).json({ message: "All fields are required." });
                 return;
             }
 
-
-
             const suggestData = { subject, deadline, description, price, user };
             const newProject = new SuggestProjectModel(suggestData);
             await newProject.save();
-            console.log("Request Body:", req.body);
-
             res.status(201).json({ message: 'Project suggestion submitted successfully', project: newProject });
         } catch (error) {
             console.error("Error in registerSuggestProjectController:", error);
