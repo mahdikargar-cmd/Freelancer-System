@@ -1,20 +1,34 @@
 "use client"
-import React, {useEffect, useState} from "react";
+import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation"; // برای ریدایرکت به لاگین
+import { useSelector } from "react-redux";
 import io from "socket.io-client";
-import {FreelancerM} from "@/Components/Messages/FreelancerM";
-import {KarfarmaM} from "@/Components/Messages/KarfarmaM";
+import { FreelancerM } from "@/Components/Messages/FreelancerM";
+import { KarfarmaM } from "@/Components/Messages/KarfarmaM";
 
 const socket = io("http://localhost:5000");
 
 function Message() {
+    const isLoggedIn = useSelector((state) => state.auth.isLoggedIn); // بررسی وضعیت ورود کاربر
+    const router = useRouter();
+    const [isMounted, setIsMounted] = useState(false); // برای کنترل رندرینگ سمت کلاینت
+
     const [freelancerM, setFreelancerM] = useState(false);
     const [karfarmaM, setKarfarmaM] = useState(false);
     const [isChatActive, setIsChatActive] = useState(false);
     const [message, setMessage] = useState("");
     const [chatMessage, setChatMessage] = useState([]);
-    const [chatMessages, setChatMessages] = useState([]);
-
     const [selectedSuggestion, setSelectedSuggestion] = useState(null);
+
+    useEffect(() => {
+        setIsMounted(true); // زمانی که کامپوننت در سمت کلاینت لود شد
+    }, []);
+
+    useEffect(() => {
+        if (isMounted && !isLoggedIn) {
+            router.push("/login"); // ریدایرکت به لاگین اگر کاربر لاگین نیست
+        }
+    }, [isMounted, isLoggedIn]);
 
     const FreelancerMessage = () => {
         setFreelancerM(true);
@@ -25,23 +39,26 @@ function Message() {
     const KarfarmaMessageToggle = () => {
         setKarfarmaM(true);
         setFreelancerM(false);
-        setIsChatActive(false); // To hide chat area initially until a suggestion is selected
+        setIsChatActive(false);
     };
 
-    // Handling suggestion selection
     const handleSuggestionClick = (suggestion) => {
         setSelectedSuggestion(suggestion);
         setIsChatActive(true);
     };
 
-    // Sending message logic
     const sendMessage = () => {
         if (message.trim()) {
             const role = freelancerM ? "freelancer" : "karfarma";
-            const messageData = { text: message, role: role, suggestionId: selectedSuggestion._id };
+            const messageData = {
+                text: message,
+                role: role,
+                suggestionId: selectedSuggestion._id,
+                employerId: selectedSuggestion.user
+            };
 
             socket.emit("sendMessage", messageData);
-            setChatMessages((prev) => [...prev, messageData]);
+            setChatMessage((prev) => [...prev, messageData]);
             setMessage("");
         }
     };
@@ -55,6 +72,9 @@ function Message() {
             socket.off("receiveMessage");
         };
     }, [selectedSuggestion]);
+
+    if (!isMounted || !isLoggedIn) return null; // از رندرینگ جلوگیری می‌کند تا زمانی که در سمت کلاینت رندر شود و کاربر لاگین کرده باشد
+
 
     return (
         <div className={"mt-4 pb-5 flex justify-center"}>

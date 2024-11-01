@@ -10,12 +10,19 @@ export const KarfarmaM = ({ onSuggestionClick }) => {
 
     const fetchData = async () => {
         try {
-            const response = await axios.get("http://localhost:5000/api/suggestProject/getSuggest");
+            const response = await axios.get("http://localhost:5000/api/suggestProject/getSuggest", {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem("authToken")}`, // ارسال توکن احراز هویت
+                },
+            });
+
             setKarfarmaMessage(Array.isArray(response.data.projects) ? response.data.projects : []);
         } catch (error) {
             console.log("error: ", error);
         }
     };
+
+
 
     return (
         <>

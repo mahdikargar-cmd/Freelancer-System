@@ -12,18 +12,18 @@ export default function CreateProject() {
         formData.append('category', data.category);
         formData.append('deadline', data.deadline);
         formData.append('description', data.description);
-        formData.append('skills', data.skills.split(",")); // تبدیل رشته کاما جداسازی شده به آرایه
+        formData.append('skills', data.skills.split(","));
 
-        // ارسال محدوده به صورت کلید‌های جداگانه
-        formData.append('rangeMin', data.range.min);
-        formData.append('rangeMax', data.range.max);
+        // تغییر نام فیلدهای رنج
+        formData.append('rangeMin', data.rangeMin);
+        formData.append('rangeMax', data.rangeMax);
 
         if (data.file && data.file[0]) {
             formData.append('file', data.file[0]);
         }
 
         try {
-            console.log([...formData]); // بررسی داده‌های ارسال‌شده
+            console.log([...formData]);
             const response = await axios.post('http://localhost:5000/api/createProject/create', formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
@@ -118,9 +118,9 @@ export default function CreateProject() {
                                     {...register("range.max", { required: "این فیلد الزامی است" })}
                                 />
                             </div>
-                            {errors.range && (
+                            {(errors.rangeMin || errors.rangeMax) && (
                                 <span className="text-red-500">
-                                    {errors.range.min?.message || errors.range.max?.message}
+                                    {errors.rangeMin?.message || errors.rangeMax?.message}
                                 </span>
                             )}
                         </div>

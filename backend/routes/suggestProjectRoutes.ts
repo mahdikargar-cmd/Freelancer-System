@@ -1,5 +1,7 @@
+// routes/suggestProjectRoutes.ts
 import express from 'express';
-import suggestprojectController from '../controllers/SuggestprojectController'; // Default import
+import suggestprojectController from '../controllers/SuggestprojectController';
+import authMiddleware from "../middleware/authMiddleware";
 
 const router = express.Router();
 
@@ -10,10 +12,14 @@ router.post(
 
 router.get(
     '/getSuggest',
+    authMiddleware as express.RequestHandler, // اضافه کردن نوع
     suggestprojectController.getSuggestProjectController.bind(suggestprojectController)
 );
+
 router.get(
     '/getSuggest/:id',
     suggestprojectController.getSuggestProjectById.bind(suggestprojectController)
 );
+console.log("In suggestProjectRoutes - Route Reached");
+
 export default router;

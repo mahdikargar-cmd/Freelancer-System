@@ -8,9 +8,19 @@ export const FreelancerM = () => {
         getData();
     }, []);
 
+
     const getData = async () => {
-        const response = await axios.get('http://localhost:5000/api/suggestProject/getSuggest');
-        setGData(response.data.projects);
+        try {
+            const token = localStorage.getItem("token"); // فرض کنید توکن در localStorage ذخیره شده است
+            const response = await axios.get("http://localhost:5000/api/suggestProject/getSuggest", {
+                headers: {
+                    Authorization: `Bearer ${token}`, // ارسال توکن در هدر
+                },
+            });
+            setGData(response.data.projects);
+        } catch (error) {
+            console.error("Error fetching suggestions:", error.response?.data || error);
+        }
     };
 
     return (

@@ -3,8 +3,9 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from "next/navigation";
 import axios from "axios";
 import { useForm } from "react-hook-form";
-import {useDispatch, useSelector} from "react-redux";
-import {checkLoginStatus} from "@/app/redux/authSlice";
+import { useDispatch, useSelector } from "react-redux";
+
+import { checkLoginStatus } from "@/app/redux/authSlice";
 
 function ProjectCheckout() {
     const { register, handleSubmit, formState: { errors } } = useForm();
@@ -14,37 +15,42 @@ function ProjectCheckout() {
 
     const dispatch = useDispatch();
     const isLoggedIn = useSelector((state) => state.auth.isLoggedIn);
+    const userId = useSelector((state) => state.auth.userId); // Access `userId` here
 
     useEffect(() => {
         dispatch(checkLoginStatus());
-
     }, [dispatch]);
+
     useEffect(() => {
         if (projectID) {
             fetchData();
         }
     }, [projectID]);
 
+    const getUserId = () => userId || localStorage.getItem("userId");
 
     useEffect(() => {
-        if (isLoggedIn) {
-            localStorage.setItem("userId", "671d306081101d9cba2001a8");  // ذخیره آی‌دی کاربر
+        const currentUserId = getUserId();
+        if (isLoggedIn && currentUserId) {
+            localStorage.setItem("userId", currentUserId);
         } else {
             localStorage.removeItem("userId");
             alert("User is not logged in. Please log in.");
         }
-    }, [isLoggedIn]);
+    }, [isLoggedIn, userId]);
 
     const postData = async (formData) => {
         try {
-            const userId = localStorage.getItem("userId");
-            if (!userId) {
+            const currentUserId = getUserId();
+            console.log("Current User ID:", currentUserId); // Debug log
+
+            if (!currentUserId) {
                 alert("Please log in to submit your suggestion.");
                 return;
             }
 
-            const dataToSend = {...formData, user: userId};
-            const response = await axios.post("http://localhost:5000/api/suggestProject/createSuggest", dataToSend);
+            const dataToSend = { ...formData, user: String(currentUserId) };
+            await axios.post("http://localhost:5000/api/suggestProject/createSuggest", dataToSend);
             alert("Suggestion submitted successfully");
         } catch (error) {
             console.error("Error submitting project suggestion:", error.response?.data || error);
@@ -62,6 +68,7 @@ function ProjectCheckout() {
 
     const changeModal = () => setModal(!modal);
     const closeModal = (e) => { if (e.target.id === 'modalBackground') setModal(false); };
+
     return (
         <>
             <div className={'flex justify-center mt-4 items-center'}>

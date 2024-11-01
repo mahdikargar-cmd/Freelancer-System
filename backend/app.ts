@@ -6,6 +6,7 @@ import suggestProject from "./routes/suggestProjectRoutes";
 import cors from "cors";
 import dotenv from "dotenv";
 import http from "http";
+'./middleware/custom'
 import { Server, Socket } from "socket.io";
 
 dotenv.config();
@@ -24,8 +25,9 @@ io.on("connection", (socket: Socket) => {
   console.log("user connected:", socket.id);
 
   // دریافت پیام از کلاینت و ارسال به همه کاربران
-  socket.on("sendMessage", (message: any) => {
-    io.emit("receiveMessage", message);
+  socket.on("sendMessage", (message) => {
+    const { employerId } = message;
+    io.to(employerId).emit("receiveMessage", message);
   });
 
   // رویداد disconnect
@@ -37,8 +39,9 @@ io.on("connection", (socket: Socket) => {
 connectDb();
 app.use(express.json());
 app.use(cors({
-  origin: "http://localhost:3000",
-  methods: ["GET", "POST"]
+  origin: 'http://localhost:3000', // آدرس کلاینت (جایی که اپلیکیشن شما در حال اجراست)
+  methods: ['GET', 'POST', 'PUT', 'DELETE'], // متدهای مجاز
+  credentials: true, // اگر نیاز به ارسال کوکی‌ها دارید
 }));
 
 app.use((req: Request, res: Response, next: NextFunction) => {

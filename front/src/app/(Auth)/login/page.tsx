@@ -3,18 +3,12 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
-import {loginSuccess} from "@/app/redux/authSlice";
-import {useDispatch} from "react-redux";
+import { loginSuccess } from "@/app/redux/authSlice";
+import { useDispatch } from "react-redux";
 
 export default function Login() {
     const dispatch = useDispatch();
-
-    const {
-        register,
-        handleSubmit,
-        reset,
-        formState: { errors }
-    } = useForm();
+    const { register, handleSubmit, reset, formState: { errors } } = useForm();
     const router = useRouter();
     const [sign, setSign] = useState(false); // false: login, true: signup
     const [error, setError] = useState("");
@@ -45,10 +39,11 @@ export default function Login() {
             const response = await axios.post(url, payload, {
                 headers: { 'Content-Type': 'application/json' }
             });
-            console.log(response.data);
+            const token = response.data.token; // Assuming the token is in response.data.token
+            localStorage.setItem("authToken", token); // Save the token to localStorage
             setMessage(sign ? "ثبت نام موفقیت آمیز بود!" : "ورود موفقیت آمیز بود!");
             dispatch(loginSuccess());
-            await router.push("/"); // به صفحه اصلی ریدایرکت کن
+            await router.push("/");
         } catch (error) {
             setError(error.response?.data?.message || "مشکلی پیش آمده است");
         }
@@ -96,82 +91,41 @@ export default function Login() {
                             ? "فرم ثبت نام خود را پر کنید"
                             : "لطفاً اطلاعات ورود خود را وارد کنید"}
                     </p>
-
-                    {/* Input Fields */}
-                    <form onSubmit={handleSubmit(onSubmit)} className="w-full mt-10">
-                        {sign ? (
-                            <>
-                                <label className="block mb-4">
-                                    <input
-                                        type="text"
-                                        {...register("fullName", { required: true })}
-                                        placeholder="نام و نام خانوادگی"
-                                        className="w-full p-2 border-0 rounded  shadow-xl"
-                                    />
-                                    {errors.fullName && (
-                                        <span className="text-red-500">
-                      نام و نام خانوادگی لازم است
-                    </span>
-                                    )}
-                                </label>
-                                <label className="block mb-4">
-                                    <input
-                                        type="email"
-                                        {...register("email", { required: "آدرس ایمیل لازم است" })}
-                                        placeholder="Email Address"
-                                        className="w-full p-2 border-0 rounded  shadow-xl"
-                                    />
-                                    {errors.email && (
-                                        <span className="text-red-500">آدرس ایمیل لازم است</span>
-                                    )}
-                                </label>
-                                <label className="block mb-4">
-                                    <input
-                                        type="password"
-                                        {...register("password", { required: true })}
-                                        placeholder="رمز عبور"
-                                        className="w-full p-2 border-0 rounded shadow-md"
-                                    />
-                                    {errors.password && (
-                                        <span className="text-red-500">رمز عبور لازم است</span>
-                                    )}
-                                </label>
-                            </>
-                        ) : (
-                            <>
-                                <label className="block mb-4">
-                                    <input
-                                        type="email"
-                                        {...register("email", { required: true })}
-                                        placeholder="آدرس ایمیل"
-                                        className="w-full p-2 border-0 rounded  shadow-xl"
-                                    />
-                                    {errors.email && (
-                                        <span className="text-red-500">آدرس ایمیل لازم است</span>
-                                    )}
-                                </label>
-                                <label className="block mb-4">
-                                    <input
-                                        type="password"
-                                        {...register("password", { required: true })}
-                                        placeholder="رمز عبور"
-                                        className="w-full p-2 border-0 rounded shadow-md"
-                                    />
-                                    {errors.password && (
-                                        <span className="text-red-500">رمز عبور لازم است</span>
-                                    )}
-                                </label>
-                            </>
+                    <form
+                        onSubmit={handleSubmit(onSubmit)}
+                        className="w-full flex flex-col items-center"
+                    >
+                        {sign && (
+                            <input
+                                type="text"
+                                placeholder="نام کامل"
+                                {...register("fullName", { required: "نام کامل الزامی است" })}
+                                className={`border p-2 rounded-lg mb-2 w-[70%]`}
+                            />
                         )}
+                        <input
+                            type="email"
+                            placeholder="ایمیل"
+                            {...register("email", { required: "ایمیل الزامی است" })}
+                            className={`border p-2 rounded-lg mb-2 w-[70%]`}
+                        />
+                        {errors.email && <span className="text-red-600">{errors.email.message}</span>}
+                        <input
+                            type="password"
+                            placeholder="رمز عبور"
+                            {...register("password", { required: "رمز عبور الزامی است" })}
+                            className={`border p-2 rounded-lg mb-2 w-[70%]`}
+                        />
+                        {errors.password && <span className="text-red-600">{errors.password.message}</span>}
+                        <div className="text-red-600">{error}</div>
+                        <div className="text-green-600">{message}</div>
                         <button
-                            className="bg-blue-500 text-white ps-4 pl-4 py-2 rounded-lg text-[30px] shadow-lg hover:bg-blue-700 transition duration-300"
                             type="submit"
+                            className="bg-blue-700 text-white py-2 px-4 rounded-lg mt-4 hover:bg-blue-800 transition duration-300"
                         >
                             {sign ? "ثبت نام" : "ورود"}
                         </button>
                     </form>
-                    {error && <p className="text-red-500 mt-4">{error}</p>}
-                    {message && <p className="text-green-500 mt-4">{message}</p>}
                 </div>
             </div>
         </div>
