@@ -1,20 +1,6 @@
-import mongoose, { Schema, Document } from 'mongoose';
+const mongoose = require('mongoose');
 
-interface ICreateProject extends Document {
-  subject: string;
-  category: string;
-  deadline: number;
-  description: string;
-  file?: string;
-  skills: string[];
-  range: {
-    min: number;
-    max: number;
-  };
-  createdAt?: Date;
-}
-
-const createSchema: Schema = new mongoose.Schema({
+const createSchema = new mongoose.Schema({
   subject: { type: String, required: true },
   category: { type: String, required: true },
   deadline: { type: Number, required: true },
@@ -28,4 +14,4 @@ const createSchema: Schema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
-export default mongoose.model<ICreateProject>('CreateProject', createSchema);
+module.exports = mongoose.model('CreateProject', createSchema);

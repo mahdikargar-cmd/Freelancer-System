@@ -1,10 +1,9 @@
-// routes/someProtectedRoute.ts
-import express from 'express';
-import authMiddleware, { AuthRequest } from '../middleware/authMiddleware';
+const express = require('express');
+const authMiddleware = require('../middleware/authMiddleware.js');
 
 const router = express.Router();
 
-router.get('/protected', authMiddleware, (req: AuthRequest, res) => {
+router.get('/protected', authMiddleware, (req, res) => {
     if (req.user?.role === 'employer') {
         res.send("به پنل کارفرما خوش آمدید!");
     } else {
@@ -12,4 +11,4 @@ router.get('/protected', authMiddleware, (req: AuthRequest, res) => {
     }
 });
 
-export default router;
+module.exports = router;

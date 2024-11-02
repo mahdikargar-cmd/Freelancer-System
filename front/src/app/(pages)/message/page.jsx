@@ -1,15 +1,18 @@
-"use client"
+// components/Message.tsx
+
+"use client";
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation"; // برای ریدایرکت به لاگین
-import { useSelector } from "react-redux";
 import io from "socket.io-client";
-import { FreelancerM } from "@/Components/Messages/FreelancerM";
-import { KarfarmaM } from "@/Components/Messages/KarfarmaM";
+import { FreelancerM } from "../../../Components/Messages/FreelancerM";
+import { KarfarmaM } from "../../../Components/Messages/KarfarmaM";
+import {AuthProvider} from "../../context/AuthContext";
+
 
 const socket = io("http://localhost:5000");
 
 function Message() {
-    const isLoggedIn = useSelector((state) => state.auth.isLoggedIn); // بررسی وضعیت ورود کاربر
+    const { isLoggedIn } = useAuth(); // دریافت وضعیت ورود از Context
     const router = useRouter();
     const [isMounted, setIsMounted] = useState(false); // برای کنترل رندرینگ سمت کلاینت
 
@@ -64,8 +67,8 @@ function Message() {
     };
 
     useEffect(() => {
-        socket.on("receiveMessage", (msg) => {
-            setChatMessage((prevMessages) => [...prevMessages, msg]);
+        socket.on("receiveMessage", (messages) => {
+            setChatMessage(messages);
         });
 
         return () => {
@@ -74,7 +77,6 @@ function Message() {
     }, [selectedSuggestion]);
 
     if (!isMounted || !isLoggedIn) return null; // از رندرینگ جلوگیری می‌کند تا زمانی که در سمت کلاینت رندر شود و کاربر لاگین کرده باشد
-
 
     return (
         <div className={"mt-4 pb-5 flex justify-center"}>
@@ -95,8 +97,8 @@ function Message() {
                                 پیام های کارفرمایی
                             </button>
                         </div>
-                        {freelancerM && <FreelancerM/>}
-                        {karfarmaM && <KarfarmaM onSuggestionClick={handleSuggestionClick}/>}
+                        {freelancerM && <FreelancerM />}
+                        {karfarmaM && <KarfarmaM onSuggestionClick={handleSuggestionClick} />}
                     </div>
                     <div className={`col-span-8 bg-gray-200 chat ${isChatActive ? "" : "hidden"}`}>
                         {selectedSuggestion ? (
@@ -107,20 +109,16 @@ function Message() {
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-12">
-
                                     <div className={'col-span-12 flex justify-between'}>
                                         <p>قیمت: {selectedSuggestion.price}</p>
                                         <p>مدت زمان: {selectedSuggestion.deadline} روز</p>
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-12">
-
                                     <div className={'col-span-12 pb-4 p-2'}>
                                         <p>توضیحات: {selectedSuggestion.description}</p>
                                     </div>
                                 </div>
-
-
                             </div>
                         ) : (
                             <p>لطفا یک پیشنهاد را انتخاب کنید</p>

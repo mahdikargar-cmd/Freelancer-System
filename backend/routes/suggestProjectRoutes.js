@@ -1,7 +1,7 @@
-// routes/suggestProjectRoutes.ts
-import express from 'express';
-import suggestprojectController from '../controllers/SuggestprojectController';
-import authMiddleware from "../middleware/authMiddleware";
+// routes/suggestProjectRoutes.js
+const express = require('express'); // Import express
+const suggestprojectController = require('../controllers/SuggestprojectController.js'); // Import the controller
+const authMiddleware = require("../middleware/authMiddleware.js"); // Import the middleware
 
 const router = express.Router();
 
@@ -12,7 +12,7 @@ router.post(
 
 router.get(
     '/getSuggest',
-    authMiddleware as express.RequestHandler, // اضافه کردن نوع
+    authMiddleware, // No type annotation needed in JavaScript
     suggestprojectController.getSuggestProjectController.bind(suggestprojectController)
 );
 
@@ -20,6 +20,7 @@ router.get(
     '/getSuggest/:id',
     suggestprojectController.getSuggestProjectById.bind(suggestprojectController)
 );
+
 console.log("In suggestProjectRoutes - Route Reached");
 
-export default router;
+module.exports = router; // Export the router
