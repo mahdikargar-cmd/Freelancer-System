@@ -1,17 +1,16 @@
-import multer, { FileFilterCallback } from 'multer';
-import path from 'path';
-import { Request } from 'express';
+const multer = require('multer');
+const path = require('path');
 
 const storage = multer.diskStorage({
-  destination: (req: Request, file, cb) => {
+  destination: (req, file, cb) => {
     cb(null, path.join(__dirname, '../uploads'));
   },
-  filename: (req: Request, file, cb) => {
+  filename: (req, file, cb) => {
     cb(null, `${Date.now()}-${file.originalname}`);
   },
 });
 
-const checkFileType = (file: Express.Multer.File, cb: FileFilterCallback): void => {
+const checkFileType = (file, cb) => {
   const filetypes = /jpeg|jpg|png|pdf|docx/;
   const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
   const mimetype = filetypes.test(file.mimetype);
@@ -25,10 +24,10 @@ const checkFileType = (file: Express.Multer.File, cb: FileFilterCallback): void 
 
 const upload = multer({
   storage,
-  limits: { fileSize: 100 * 1024 * 1024 }, // Max file size (e.g., 10MB)
-  fileFilter: (req: Request, file, cb: FileFilterCallback) => {
+  limits: { fileSize: 100 * 1024 * 1024 }, // Max file size (e.g., 100MB)
+  fileFilter: (req, file, cb) => {
     checkFileType(file, cb);
   },
 });
 
-export default upload;
+module.exports = upload;

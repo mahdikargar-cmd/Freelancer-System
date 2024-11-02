@@ -1,8 +1,7 @@
-import { Request, Response } from 'express';
-import Project from '../models/createProjectModel';
+const Project = require('../models/createProjectModel');
 
 class CreateProjectController {
-  async createProject(req: Request, res: Response): Promise<void> {
+  async createProject(req, res) {
     try {
       const projectData = {
         subject: req.body.subject,
@@ -27,7 +26,7 @@ class CreateProjectController {
     }
   }
 
-  async getProject(req: Request, res: Response): Promise<void> {
+  async getProject(req, res) {
     try {
       const projects = await Project.find();
       res.status(200).json(projects);
@@ -36,7 +35,7 @@ class CreateProjectController {
     }
   }
 
-  async getProjectById(req: Request, res: Response): Promise<void> {
+  async getProjectById(req, res) {
     try {
       const project = await Project.findById(req.params.id);
       if (!project) {
@@ -50,4 +49,4 @@ class CreateProjectController {
   }
 }
 
-export default new CreateProjectController();
+module.exports = new CreateProjectController();

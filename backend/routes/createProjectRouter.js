@@ -1,8 +1,8 @@
-import { Router } from 'express';
-import createProjectController from '../controllers/createProjectController';
-import upload from '../middleware/upload';
+const express = require('express');
+const createProjectController = require('../controllers/createProjectController');
+const upload = require('../middleware/upload');
 
-const router = Router();
+const router = express.Router();
 
 // Create a new project
 router.post('/create', upload.single('file'), createProjectController.createProject);
@@ -13,4 +13,4 @@ router.get('/', createProjectController.getProject);
 // Get a project by its ID
 router.get('/:id', createProjectController.getProjectById);
 
-export default router;
+module.exports = router;

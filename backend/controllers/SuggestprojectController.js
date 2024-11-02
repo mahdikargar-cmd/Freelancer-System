@@ -1,11 +1,10 @@
-import { Request, Response } from 'express';
-import mongoose from 'mongoose';
-import SuggestProjectModel from '../models/SuggestProject';
-import Project from '../models/createProjectModel';
-import { AuthRequest } from '../middleware/authMiddleware';
+const mongoose = require('mongoose');
+const SuggestProjectModel = require('../models/SuggestProject');
+const Project = require('../models/createProjectModel');
+const authMiddleware = require('../middleware/authMiddleware');
 
 class SuggestProjectController {
-    async registerSuggestProjectController(req: AuthRequest, res: Response): Promise<void> {
+    async registerSuggestProjectController(req, res) {
         try {
             const { subject, deadline, description, price } = req.body;
             const user = req.user?.id;
@@ -39,8 +38,7 @@ class SuggestProjectController {
         }
     }
 
-
-    async getSuggestProjectController(req: AuthRequest, res: Response): Promise<void> {
+    async getSuggestProjectController(req, res) {
         try {
             const employerId = req.user?.id;
             if (!employerId) {
@@ -61,7 +59,7 @@ class SuggestProjectController {
         }
     }
 
-    async getSuggestProjectById(req: Request, res: Response): Promise<void> {
+    async getSuggestProjectById(req, res) {
         try {
             const project = await Project.findById(req.params.id);
             if (!project) {
@@ -75,4 +73,4 @@ class SuggestProjectController {
     }
 }
 
-export default new SuggestProjectController();
+module.exports = new SuggestProjectController();

@@ -1,11 +1,6 @@
-import { Request, Response, NextFunction } from 'express';
-import jwt, { JwtPayload } from 'jsonwebtoken';
+const jwt = require('jsonwebtoken');
 
-export interface AuthRequest extends Request {
-    user?: { id: string };
-}
-
-const authMiddleware = (req: AuthRequest, res: Response, next: NextFunction) => {
+const authMiddleware = (req, res, next) => {
     const token = req.header('Authorization')?.replace('Bearer ', '');
 
     if (!token) {
@@ -19,10 +14,10 @@ const authMiddleware = (req: AuthRequest, res: Response, next: NextFunction) => 
     }
 
     try {
-        const decoded = jwt.verify(token, jwtSecret) as JwtPayload;
+        const decoded = jwt.verify(token, jwtSecret);
 
         if (typeof decoded === 'object' && decoded.id) {
-            req.user = { id: decoded.id as string }; // Attach user ID to req.user
+            req.user = { id: decoded.id }; // Attach user ID to req.user
             next();
         } else {
             res.status(401).json({ message: 'Token does not contain valid user information' });
@@ -32,4 +27,4 @@ const authMiddleware = (req: AuthRequest, res: Response, next: NextFunction) => 
     }
 };
 
-export default authMiddleware;
+module.exports = authMiddleware;

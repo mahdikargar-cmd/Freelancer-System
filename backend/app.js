@@ -1,13 +1,12 @@
-import express, { Request, Response, NextFunction } from "express";
-import connectDb from "./config/db";
-import authRoutes from "./routes/authRoutes";
-import createProject from "./routes/createProjectRouter";
-import suggestProject from "./routes/suggestProjectRoutes";
-import cors from "cors";
-import dotenv from "dotenv";
-import http from "http";
-'./middleware/custom'
-import { Server, Socket } from "socket.io";
+const express = require("express");
+const connectDb = require("./config/db");
+const authRoutes = require("./routes/authRoutes");
+const createProject = require("./routes/createProjectRouter");
+const suggestProject = require("./routes/suggestProjectRoutes");
+const cors = require("cors");
+const dotenv = require("dotenv");
+const http = require("http");
+const { Server } = require("socket.io");
 
 dotenv.config();
 
@@ -21,7 +20,7 @@ const io = new Server(server, {
 });
 
 // اتصال Socket.io
-io.on("connection", (socket: Socket) => {
+io.on("connection", (socket) => {
   console.log("user connected:", socket.id);
 
   // دریافت پیام از کلاینت و ارسال به همه کاربران
@@ -44,7 +43,7 @@ app.use(cors({
   credentials: true, // اگر نیاز به ارسال کوکی‌ها دارید
 }));
 
-app.use((req: Request, res: Response, next: NextFunction) => {
+app.use((req, res, next) => {
   console.log("Incoming Request Body:", req.body);
   console.log("Incoming Request:", {
     body: req.body,
