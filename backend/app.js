@@ -19,17 +19,14 @@ const io = new Server(server, {
   }
 });
 
-// اتصال Socket.io
 io.on("connection", (socket) => {
   console.log("user connected:", socket.id);
 
-  // دریافت پیام از کلاینت و ارسال به همه کاربران
   socket.on("sendMessage", (message) => {
     const { employerId } = message;
     io.to(employerId).emit("receiveMessage", message);
   });
 
-  // رویداد disconnect
   socket.on("disconnect", () => {
     console.log("کاربر قطع شد:", socket.id);
   });
@@ -38,7 +35,7 @@ io.on("connection", (socket) => {
 connectDb();
 app.use(express.json());
 app.use(cors({
-  origin: 'http://localhost:3000', // آدرس کلاینت (جایی که اپلیکیشن شما در حال اجراست)
+  origin: 'http://localhost:3000', 
   methods: ['GET', 'POST', 'PUT', 'DELETE'], // متدهای مجاز
   credentials: true, // اگر نیاز به ارسال کوکی‌ها دارید
 }));

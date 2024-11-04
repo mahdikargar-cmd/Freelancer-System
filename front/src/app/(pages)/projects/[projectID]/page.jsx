@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import axios from "axios";
 import { useForm } from "react-hook-form";
-import {AuthProvider} from "../../context/AuthContext";
+import {useAuth} from "../../../context/AuthContext";
 
 function ProjectCheckout() {
     const { register, handleSubmit, formState: { errors } } = useForm();

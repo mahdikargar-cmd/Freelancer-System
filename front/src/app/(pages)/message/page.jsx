@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation"; // برای ریدایرکت به �
 import io from "socket.io-client";
 import { FreelancerM } from "../../../Components/Messages/FreelancerM";
 import { KarfarmaM } from "../../../Components/Messages/KarfarmaM";
-import {AuthProvider} from "../../context/AuthContext";
+import {useAuth} from "../../context/AuthContext";
 
 
 const socket = io("http://localhost:5000");
@@ -24,12 +24,12 @@ function Message() {
     const [selectedSuggestion, setSelectedSuggestion] = useState(null);
 
     useEffect(() => {
-        setIsMounted(true); // زمانی که کامپوننت در سمت کلاینت لود شد
+        setIsMounted(true);
     }, []);
 
     useEffect(() => {
         if (isMounted && !isLoggedIn) {
-            router.push("/login"); // ریدایرکت به لاگین اگر کاربر لاگین نیست
+            router.push("/login");
         }
     }, [isMounted, isLoggedIn]);
 

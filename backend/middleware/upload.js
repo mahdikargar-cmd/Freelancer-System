@@ -24,7 +24,7 @@ const checkFileType = (file, cb) => {
 
 const upload = multer({
   storage,
-  limits: { fileSize: 100 * 1024 * 1024 }, // Max file size (e.g., 100MB)
+  limits: { fileSize: 100 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     checkFileType(file, cb);
   },

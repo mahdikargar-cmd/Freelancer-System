@@ -1,6 +1,5 @@
-import type {Config} from "tailwindcss";
-
-const config: Config = {
+/** @type {import('tailwindcss').Config} */
+const config = {
     content: [
         "./src/(pages)/**/*.{js,ts,jsx,tsx,mdx}",
         "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -11,11 +10,11 @@ const config: Config = {
             colors: {
                 background: "var(--background)",
                 foreground: "var(--foreground)",
-                bgComponent:"var(--bgComponent)"
-},
-},
-},
-plugins: [],
-}
-;
-export default config;
+                bgComponent: "var(--bgComponent)",
+            },
+        },
+    },
+    plugins: [],
+};
+
+module.exports = config;

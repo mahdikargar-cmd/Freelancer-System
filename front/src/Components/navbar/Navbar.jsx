@@ -8,15 +8,13 @@ import { FaRegMessage } from 'react-icons/fa6';
 import { useAuth } from '@/app/context/AuthContext';
 
 function Navbar() {
-    const [isClient, setIsClient] = useState(false); // اطمینان از رندر فقط در سمت کلاینت
-    const { state, logout } = useAuth();
-    const isLoggedIn = state.isLoggedIn;
+    const [isClient, setIsClient] = useState(false);
+    const { isLoggedIn, logout } = useAuth();
 
     useEffect(() => {
         setIsClient(true); // فقط در سمت کلاینت true می‌شود
     }, []);
 
-    // نمایش محتوا پس از بارگذاری سمت کلاینت
     if (!isClient) return null;
 
     return (

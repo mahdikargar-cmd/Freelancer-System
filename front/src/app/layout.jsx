@@ -17,8 +17,10 @@ const geistMono = localFont({
 
 export default function RootLayout({ children }) {
     return (
+
         <html lang="en" dir={'rtl'}>
         <body className={`${geistSans.variable} ${geistMono.variable} antialiased m-2`}>
+
         <AuthProvider>
             <Navbar />
             {children}
