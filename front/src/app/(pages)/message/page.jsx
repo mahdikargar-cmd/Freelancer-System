@@ -1,19 +1,18 @@
-
-"use client";
+// Other imports remain the same
+"use client"
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import io from "socket.io-client";
-import { FreelancerM } from "../../../Components/Messages/FreelancerM";
-import { KarfarmaM } from "../../../Components/Messages/KarfarmaM";
-import {useAuth} from "../../context/AuthContext";
-
+import { FreelancerM } from "../../../Components/Messages/FreelancerM"; // Ensure correct path
+import { KarfarmaM } from "../../../Components/Messages/KarfarmaM"; // Ensure correct path
+import { useAuth } from "../../context/AuthContext";
 
 const socket = io("http://localhost:5000");
 
 function Message() {
     const { isLoggedIn } = useAuth(); // دریافت وضعیت ورود از Context
     const router = useRouter();
-    const [isMounted, setIsMounted] = useState(false); // برای کنترل رندرینگ سمت کلاینت
+    const [isMounted, setIsMounted] = useState(false);
 
     const [freelancerM, setFreelancerM] = useState(false);
     const [karfarmaM, setKarfarmaM] = useState(false);
@@ -75,7 +74,7 @@ function Message() {
         };
     }, [selectedSuggestion]);
 
-    if (!isMounted || !isLoggedIn) return null; // از رندرینگ جلوگیری می‌کند تا زمانی که در سمت کلاینت رندر شود و کاربر لاگین کرده باشد
+    if (!isMounted || !isLoggedIn) return null; // Prevent rendering if not logged in
 
     return (
         <div className={"mt-4 pb-5 flex justify-center"}>
@@ -91,17 +90,16 @@ function Message() {
                             <button onClick={FreelancerMessage} className={"bg-gray-600 p-2 rounded-full text-white"}>
                                 پیام های فریلنسری
                             </button>
-                            <button onClick={KarfarmaMessageToggle}
-                                    className={"bg-gray-600 p-2 rounded-full text-white"}>
+                            <button onClick={KarfarmaMessageToggle} className={"bg-gray-600 p-2 rounded-full text-white"}>
                                 پیام های کارفرمایی
                             </button>
                         </div>
-                        {freelancerM && <FreelancerM />}
+                        {freelancerM && <FreelancerM onSuggestionClick={handleSuggestionClick} />} {/* Pass the function here */}
                         {karfarmaM && <KarfarmaM onSuggestionClick={handleSuggestionClick} />}
                     </div>
                     <div className={`col-span-8 bg-gray-200 chat ${isChatActive ? "" : "hidden"}`}>
                         {selectedSuggestion ? (
-                            <div className={'border-amber-200 border-2  bg-white m-6 rounded-full p-4'}>
+                            <div className={'border-amber-200 border-2 bg-white m-6 rounded-full p-4'}>
                                 <div className={'grid grid-cols-12'}>
                                     <div className={'col-span-12 flex justify-center'}>
                                         <h3>پیشنهاد پروژه: {selectedSuggestion.subject}</h3>
@@ -124,8 +122,7 @@ function Message() {
                         )}
                         <div className="overflow-y-auto p-4">
                             {chatMessage.map((msg, index) => (
-                                <div key={index}
-                                     className={`p-2 ${msg.role === "freelancer" ? "text-right" : "text-left"}`}>
+                                <div key={index} className={`p-2 ${msg.role === "freelancer" ? "text-right" : "text-left"}`}>
                                     <span>{msg.role === "freelancer" ? "فریلنسر" : "کارفرما"}: {msg.text}</span>
                                 </div>
                             ))}

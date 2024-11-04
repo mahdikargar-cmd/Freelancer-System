@@ -39,6 +39,7 @@ class SuggestProjectController {
             const projectIds = projects.map(project => project._id);
 
             const suggestions = await SuggestProjectModel.find({ projectId: { $in: projectIds } });
+            console.log('Fetched Suggestions:', suggestions); // Log the suggestions before sending them
             res.status(200).json({ suggestions });
         } catch (error) {
             console.error('Error fetching employer messages:', error);

@@ -38,11 +38,35 @@ function ProjectCheckout() {
                 alert("Please log in to submit your suggestion.");
                 return;
             }
-            const dataToSend = { ...formData, user: String(currentUserId) };
-            await axios.post("http://localhost:5000/api/suggestProject/createSuggest", dataToSend);
+
+            const token = localStorage.getItem("token");
+            if (!token) {
+                alert("Authentication token is missing. Please log in again.");
+                return;
+            }
+
+            if (!projectID) {
+                alert("Project ID is missing. Please try again.");
+                return;
+            }
+
+            const dataToSend = { ...formData, user: String(currentUserId), projectId: projectID };
+            console.log("Data being sent:", dataToSend); // Debugging log
+
+            const response = await axios.post(
+                "http://localhost:5000/api/suggestProject/createSuggest",
+                dataToSend,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+
             alert("Suggestion submitted successfully");
         } catch (error) {
-            console.error("Error submitting project suggestion:", error.response?.data || error);
+            console.error("Error submitting project suggestion:", error.message || error);
+            alert("Error submitting suggestion: " + (error.response?.data.message || "Unknown error"));
         }
     };
 

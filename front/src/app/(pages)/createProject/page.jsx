@@ -13,8 +13,6 @@ export default function CreateProject() {
         formData.append('deadline', data.deadline);
         formData.append('description', data.description);
         formData.append('skills', data.skills.split(","));
-
-        // تغییر نام فیلدهای رنج
         formData.append('rangeMin', data.rangeMin);
         formData.append('rangeMax', data.rangeMax);
 
@@ -23,14 +21,16 @@ export default function CreateProject() {
         }
 
         try {
+            const token = localStorage.getItem('token'); // Retrieve token from local storage
             console.log([...formData]);
             const response = await axios.post('http://localhost:5000/api/createProject/create', formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
-                }
+                    Authorization: `Bearer ${token}`, // Add token here
+                },
             });
             console.log("Project created successfully:", response.data);
-            alert("با موفقیت ثبت شد")
+            alert("با موفقیت ثبت شد");
         } catch (error) {
             console.error("Error creating project:", error.response?.data || error.message);
         }

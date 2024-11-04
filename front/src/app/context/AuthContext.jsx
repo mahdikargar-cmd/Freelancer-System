@@ -47,6 +47,9 @@ export const AuthProvider = ({children}) => {
             });
             setUser(response.data.user); // Set user if authenticated
             console.log(response.data.user)
+            console.log("Token in localStorage:", localStorage.getItem('token'));
+            console.log("User in context:", user);
+
         } catch (error) {
             console.error('Error checking login status:', error.message);
             localStorage.removeItem('token'); // Remove token on error
