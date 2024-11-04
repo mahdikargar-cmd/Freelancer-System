@@ -4,14 +4,11 @@ const Project = require('../models/createProjectModel');
 class SuggestProjectController {
     async registerSuggestProjectController(req, res) {
         try {
-            const { subject, deadline, description, price } = req.body;
+            const { subject, deadline, description, price, projectId } = req.body;
             const user = req.user?.id;
 
-
-
-            if (!subject || !deadline || !description || !price) {
-                res.status(400).json({ message: 'تمامی فیلدها الزامی است' });
-                return;
+            if (!subject || !deadline || !description || !price || !projectId) {
+                return res.status(400).json({ message: 'تمامی فیلدها الزامی است' });
             }
 
             const suggestData = {
@@ -20,6 +17,7 @@ class SuggestProjectController {
                 description,
                 price,
                 user,
+                projectId,
                 role: 'freelancer'
             };
 
@@ -32,7 +30,33 @@ class SuggestProjectController {
             res.status(500).json({ message: 'خطا در ثبت پیشنهاد پروژه', error });
         }
     }
+    // دریافت پیام‌های کارفرما
+    async getEmployerMessages(req, res) {
+        try {
+            const employerId = req.user?.id;
 
+            const projects = await Project.find({ user: employerId });
+            const projectIds = projects.map(project => project._id);
+
+            const suggestions = await SuggestProjectModel.find({ projectId: { $in: projectIds } });
+            res.status(200).json({ suggestions });
+        } catch (error) {
+            console.error('Error fetching employer messages:', error);
+            res.status(500).json({ message: 'خطا در دریافت پیام‌های کارفرما', error });
+        }
+    }
+    // دریافت پیام‌های فریلنسر
+    async getFreelancerMessages(req, res) {
+        try {
+            const freelancerId = req.user?.id;
+
+            const suggestions = await SuggestProjectModel.find({ user: freelancerId });
+            res.status(200).json({ suggestions });
+        } catch (error) {
+            console.error('Error fetching freelancer messages:', error);
+            res.status(500).json({ message: 'خطا در دریافت پیام‌های فریلنسر', error });
+        }
+    }
     async getSuggestProjectController(req, res) {
         try {
             const employerId = req.user?.id;

@@ -24,7 +24,8 @@ router.get(
     authMiddleware,
     suggestprojectController.getSuggestProjectById.bind(suggestprojectController)
 );
-
+router.get('/employerMessages', authMiddleware, suggestprojectController.getEmployerMessages.bind(suggestprojectController));
+router.get('/freelancerMessages', authMiddleware, suggestprojectController.getFreelancerMessages.bind(suggestprojectController));
 console.log("In suggestProjectRoutes - Route Reached");
 
 module.exports = router;

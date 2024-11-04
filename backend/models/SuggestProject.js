@@ -8,6 +8,7 @@ const suggestProjectSchema = new Schema({
     price: { type: String, required: true },
     role: { type: String, enum: ['freelancer'], required: true },
     user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    projectId: { type: Schema.Types.ObjectId, ref: 'Project', required: true },
     created_At: { type: Date, default: Date.now }
 });
 

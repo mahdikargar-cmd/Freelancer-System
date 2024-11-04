@@ -23,8 +23,17 @@ io.on("connection", (socket) => {
   console.log("user connected:", socket.id);
 
   socket.on("sendMessage", (message) => {
-    const { employerId } = message;
-    io.to(employerId).emit("receiveMessage", message);
+    const { employerId, projectId, content, senderRole } = message;
+
+    // پیام برای کارفرما
+    if (senderRole === 'freelancer') {
+      io.to(employerId).emit("receiveMessage", { content, projectId, role: 'employer' });
+    }
+
+    // پیام برای فریلنسر
+    if (senderRole === 'employer') {
+      io.to(socket.id).emit("receiveMessage", { content, projectId, role: 'freelancer' });
+    }
   });
 
   socket.on("disconnect", () => {
