@@ -11,7 +11,7 @@ router.post(
 
 router.get(
     '/getSuggest',
-    authMiddleware, // اضافه کردن نوع غیر ضروری در JavaScript
+    authMiddleware,
     suggestprojectController.getSuggestProjectController.bind(suggestprojectController)
 );
 

@@ -12,7 +12,7 @@ const createSchema = new Schema({
     min: { type: Number, required: true },
     max: { type: Number, required: true }
   },
-  role: { type: String, enum: 'employer', required: true }, // نقش کاربر
+  role: { type: String, enum: 'employer', required: true },
 
   createdAt: { type: Date, default: Date.now }
 });

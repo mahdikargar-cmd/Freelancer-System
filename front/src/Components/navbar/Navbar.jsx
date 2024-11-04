@@ -1,30 +1,20 @@
 "use client";
 import React, { useEffect, useState } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
 import Link from 'next/link';
 import Image from 'next/image';
 import logo from '../../public/assets/img/logo.png';
 import { FiLogIn } from 'react-icons/fi';
 import { FaRegMessage } from 'react-icons/fa6';
-import { loginSuccess, logout } from "@/app/redux/authSlice";
+import { useAuth } from '@/app/context/AuthContext';
 
 function Navbar() {
-    const dispatch = useDispatch();
     const [isClient, setIsClient] = useState(false); // اطمینان از رندر فقط در سمت کلاینت
-    const isLoggedIn = useSelector((state) => state.auth.isLoggedIn);
-
-    const handleLogout = () => {
-        localStorage.removeItem("authToken"); // توکن را در خروج حذف کن
-        dispatch(logout());
-    };
+    const { state, logout } = useAuth();
+    const isLoggedIn = state.isLoggedIn;
 
     useEffect(() => {
         setIsClient(true); // فقط در سمت کلاینت true می‌شود
-        const token = localStorage.getItem("authToken");
-        if (token) {
-            dispatch(loginSuccess());
-        }
-    }, [dispatch]);
+    }, []);
 
     // نمایش محتوا پس از بارگذاری سمت کلاینت
     if (!isClient) return null;
@@ -51,7 +41,7 @@ function Navbar() {
                     <>
                         <span className={'ml-5 flex items-center'}>پنل من</span>
                         <button
-                            onClick={handleLogout}
+                            onClick={logout} // Use context's logout function
                             className={'ml-5 flex items-center text-red-500'}
                         >
                             خروج

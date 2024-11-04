@@ -1,29 +1,21 @@
 const User = require('../models/userModel');
-const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 class AuthController {
     async register(req, res) {
-        const { name, email, password } = req.body;
-
         try {
-            const existingUser = await User.findOne({ email });
-            if (existingUser) {
-                res.status(400).json({ message: 'کاربر قبلاً ثبت نام کرده است' });
-                return;
+            const { name, email, password, role } = req.body;
+            if (!name || !email || !password ) {
+                return res.status(400).json({ message: 'تمامی فیلدها الزامی است' });
             }
 
-            const hashedPassword = await bcrypt.hash(password, 10);
-            const user = new User({ name, email, password: hashedPassword });
-            await user.save();
+            const newUser = new User({ name, email, password, role });
+            await newUser.save();
 
-            res.status(201).json({
-                message: 'کاربر با موفقیت ثبت نام شد',
-                user: { id: user._id, name: user.name, email: user.email }
-            });
+            res.status(201).json({ message: 'کاربر با موفقیت ثبت شد' });
         } catch (error) {
             console.error('Error during registration:', error);
-            res.status(500).json({ message: 'خطا در سرور' });
+            res.status(500).json({ message: 'خطا در ثبت‌نام کاربر', error });
         }
     }
 
@@ -42,16 +34,13 @@ class AuthController {
                 return;
             }
 
-            const isMatch = await bcrypt.compare(password, user.password);
-            if (!isMatch) {
-                res.status(401).json({ message: 'رمز عبور معتبر نیست' });
-                return;
-            }
+            // Generate JWT token
+            const token = jwt.sign({ id: user._id, email: user.email }, process.env.JWT_SECRET_KEY, { expiresIn: '1h' });
 
-            const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET_KEY, { expiresIn: '1h' });
             res.status(200).json({
                 message: 'ورود موفقیت‌آمیز',
-                token,
+                isLoggedIn: true,
+                token, // Send the token in response
                 user: { id: user._id, name: user.name, email: user.email }
             });
         } catch (error) {
@@ -59,6 +48,28 @@ class AuthController {
             res.status(500).json({ message: 'خطا در سرور' });
         }
     }
+
+    async statuss(req, res) {
+        try {
+            const userId = req.user.id;
+            console.log("userId in statuss",userId)
+            const user = await User.findById(userId).select('-password');
+            console.log("user in statuss",user)
+
+            if (!user) {
+                return res.status(404).json({ message: 'کاربر پیدا نشد' });
+            }
+
+            res.status(200).json({
+                isLoggedIn: true,
+                user: { id: user._id, name: user.name, email: user.email }
+            });
+        } catch (error) {
+            console.error('Error checking login status:', error);
+            res.status(500).json({ message: 'خطا در بررسی وضعیت ورود کاربر' });
+        }
+    }
+
 }
 
 module.exports = new AuthController();

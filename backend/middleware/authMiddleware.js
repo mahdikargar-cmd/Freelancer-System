@@ -1,30 +1,22 @@
 const jwt = require('jsonwebtoken');
 
-const authMiddleware = (req, res, next) => {
-    const token = req.header('Authorization')?.replace('Bearer ', '');
-
-    if (!token) {
-        return res.status(401).json({ message: 'No token provided' });
+const verifyToken = (req, res, next) => {
+    const authHeader = req.headers.authorization;
+    console.log("authHeader",authHeader);
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({message: 'Authorization token missing'});
     }
 
-    // Ensure JWT_SECRET is defined
-    const jwtSecret = process.env.JWT_SECRET_KEY;
-    if (!jwtSecret) {
-        throw new Error('JWT_SECRET is not defined in environment variables');
-    }
-
+    const token = authHeader.split(' ')[1];
+    console.log("Token to verify:", token); // Add this for debugging
     try {
-        const decoded = jwt.verify(token, jwtSecret);
-
-        if (typeof decoded === 'object' && decoded.id) {
-            req.user = { id: decoded.id }; // Attach user ID to req.user
-            next();
-        } else {
-            res.status(401).json({ message: 'Token does not contain valid user information' });
-        }
+        const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+        req.user = decoded;
+        next();
     } catch (err) {
-        res.status(401).json({ message: 'Invalid token' });
+        console.error('Token verification error:', err.message);
+        res.status(401).json({message: 'Invalid token'});
     }
 };
 
-module.exports = authMiddleware;
+module.exports = verifyToken;

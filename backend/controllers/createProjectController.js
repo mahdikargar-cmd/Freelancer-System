@@ -14,7 +14,7 @@ class CreateProjectController {
           max: parseFloat(req.body.rangeMax) || 0,
         },
         file: req.file ? req.file.filename : undefined,
-        role: 'employer' // ثبت نقش به عنوان کارفرما
+        role: 'employer'
       };
 
       const newProject = new Project(projectData);

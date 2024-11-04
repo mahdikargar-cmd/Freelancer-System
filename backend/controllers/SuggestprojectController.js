@@ -1,7 +1,5 @@
-const mongoose = require('mongoose');
 const SuggestProjectModel = require('../models/SuggestProject');
 const Project = require('../models/createProjectModel');
-const authMiddleware = require('../middleware/authMiddleware');
 
 class SuggestProjectController {
     async registerSuggestProjectController(req, res) {
@@ -9,10 +7,7 @@ class SuggestProjectController {
             const { subject, deadline, description, price } = req.body;
             const user = req.user?.id;
 
-            if (!user || !mongoose.Types.ObjectId.isValid(user)) {
-                res.status(400).json({ message: 'شناسه کاربر نامعتبر است' });
-                return;
-            }
+
 
             if (!subject || !deadline || !description || !price) {
                 res.status(400).json({ message: 'تمامی فیلدها الزامی است' });
@@ -25,7 +20,7 @@ class SuggestProjectController {
                 description,
                 price,
                 user,
-                role: 'freelancer' // ثبت نقش به عنوان فریلنسر
+                role: 'freelancer'
             };
 
             const newSuggestion = new SuggestProjectModel(suggestData);
@@ -40,7 +35,7 @@ class SuggestProjectController {
 
     async getSuggestProjectController(req, res) {
         try {
-            const employerId = req.user?.id;
+            const employerId = req.user?._id;
             if (!employerId) {
                 res.status(400).json({ message: 'شناسه کارفرما یافت نشد' });
                 return;
@@ -61,7 +56,7 @@ class SuggestProjectController {
 
     async getSuggestProjectById(req, res) {
         try {
-            const project = await Project.findById(req.params.id);
+            const project = await Project.findById(req.params._id);
             if (!project) {
                 res.status(404).json({ message: 'پروژه یافت نشد' });
                 return;
