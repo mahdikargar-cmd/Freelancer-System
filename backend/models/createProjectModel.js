@@ -1,6 +1,4 @@
-const mongoose = require('mongoose');
-const { Schema } = mongoose;
-
+const {Schema, model} = require("mongoose");
 const createSchema = new Schema({
   subject: { type: String, required: true },
   category: { type: String, required: true },
@@ -13,8 +11,8 @@ const createSchema = new Schema({
     max: { type: Number, required: true }
   },
   role: { type: String, enum: 'employer', required: true },
-
+  user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   createdAt: { type: Date, default: Date.now }
 });
 
-module.exports = mongoose.model('CreateProject', createSchema);
+module.exports = model('CreateProject', createSchema);

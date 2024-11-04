@@ -46,6 +46,7 @@ export const AuthProvider = ({children}) => {
                 headers: {Authorization: `Bearer ${token}`},
             });
             setUser(response.data.user); // Set user if authenticated
+            console.log(response.data.user)
         } catch (error) {
             console.error('Error checking login status:', error.message);
             localStorage.removeItem('token'); // Remove token on error

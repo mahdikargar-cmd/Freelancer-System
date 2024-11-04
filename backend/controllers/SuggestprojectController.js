@@ -35,13 +35,17 @@ class SuggestProjectController {
 
     async getSuggestProjectController(req, res) {
         try {
-            const employerId = req.user?._id;
+            const employerId = req.user?.id;
+            console.log("employer ID:", employerId);
+
             if (!employerId) {
                 res.status(400).json({ message: 'شناسه کارفرما یافت نشد' });
                 return;
             }
 
-            const suggestProjects = await SuggestProjectModel.find({ user: employerId });
+            // فیلتر بر اساس شناسه کارفرما و نقش فریلنسر
+            const suggestProjects = await SuggestProjectModel.find({ user: employerId, role: 'freelancer' });
+
             if (!suggestProjects.length) {
                 res.status(404).json({ message: 'پیشنهادی برای پروژه یافت نشد' });
                 return;
@@ -56,7 +60,8 @@ class SuggestProjectController {
 
     async getSuggestProjectById(req, res) {
         try {
-            const project = await Project.findById(req.params._id);
+            const project = await Project.findById(req.params.id);
+            console.log("project is:",project)
             if (!project) {
                 res.status(404).json({ message: 'پروژه یافت نشد' });
                 return;

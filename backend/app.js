@@ -35,7 +35,7 @@ io.on("connection", (socket) => {
 connectDb();
 app.use(express.json());
 app.use(cors({
-  origin: 'http://localhost:3000', 
+  origin: 'http://localhost:3000',
   methods: ['GET', 'POST', 'PUT', 'DELETE'], // متدهای مجاز
   credentials: true, // اگر نیاز به ارسال کوکی‌ها دارید
 }));

@@ -35,12 +35,12 @@ class AuthController {
             }
 
             // Generate JWT token
-            const token = jwt.sign({ id: user._id, email: user.email }, process.env.JWT_SECRET_KEY, { expiresIn: '1h' });
+            const token = jwt.sign({ id: user._id, email: user.email }, process.env.JWT_SECRET_KEY);
 
             res.status(200).json({
                 message: 'ورود موفقیت‌آمیز',
                 isLoggedIn: true,
-                token, // Send the token in response
+                token,
                 user: { id: user._id, name: user.name, email: user.email }
             });
         } catch (error) {
@@ -52,9 +52,9 @@ class AuthController {
     async statuss(req, res) {
         try {
             const userId = req.user.id;
-            console.log("userId in statuss",userId)
+            console.log("userId in status",userId)
             const user = await User.findById(userId).select('-password');
-            console.log("user in statuss",user)
+            console.log("user in statuss:",user)
 
             if (!user) {
                 return res.status(404).json({ message: 'کاربر پیدا نشد' });

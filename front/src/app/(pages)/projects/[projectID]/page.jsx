@@ -4,17 +4,16 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import axios from "axios";
 import { useForm } from "react-hook-form";
-import {useAuth} from "../../../context/AuthContext";
+import { useAuth } from "../../../context/AuthContext";
 
 function ProjectCheckout() {
     const { register, handleSubmit, formState: { errors } } = useForm();
     const [modal, setModal] = useState(false);
     const [getData, setGetData] = useState([]);
     const { projectID } = useParams();
-    const { state, dispatch } = useAuth();
+    const { isLoggedIn, user } = useAuth();
 
-    const isLoggedIn = state.isLoggedIn;
-    const userId = state.userId;
+    const userId = user?.id;
 
     useEffect(() => {
         if (projectID) {

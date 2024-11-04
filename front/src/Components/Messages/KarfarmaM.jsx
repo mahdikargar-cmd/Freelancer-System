@@ -1,3 +1,4 @@
+"use client"
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 
@@ -10,13 +11,18 @@ export const KarfarmaM = ({ onSuggestionClick }) => {
 
     const fetchData = async () => {
         try {
+            const token = localStorage.getItem("token");
+            console.log("authToken:", token);
+
             const response = await axios.get("http://localhost:5000/api/suggestProject/getSuggest", {
                 headers: {
-                    Authorization: `Bearer ${localStorage.getItem("authToken")}`, // ارسال توکن احراز هویت
+                    Authorization: `Bearer ${token}`,
                 },
             });
 
+
             setKarfarmaMessage(Array.isArray(response.data.projects) ? response.data.projects : []);
+            console.log(response.data.projects);
         } catch (error) {
             console.log("error: ", error);
         }

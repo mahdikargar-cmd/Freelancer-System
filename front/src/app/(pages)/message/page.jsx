@@ -1,8 +1,7 @@
-// components/Message.tsx
 
 "use client";
 import React, { useEffect, useState } from "react";
-import { useRouter } from "next/navigation"; // برای ریدایرکت به لاگین
+import { useRouter } from "next/navigation";
 import io from "socket.io-client";
 import { FreelancerM } from "../../../Components/Messages/FreelancerM";
 import { KarfarmaM } from "../../../Components/Messages/KarfarmaM";

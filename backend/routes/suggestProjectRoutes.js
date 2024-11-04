@@ -4,21 +4,27 @@ const authMiddleware = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
+// مسیر برای ایجاد پیشنهاد پروژه با احراز هویت
 router.post(
     '/createSuggest',
+    authMiddleware,
     suggestprojectController.registerSuggestProjectController.bind(suggestprojectController)
 );
 
+// مسیر برای دریافت تمامی پیشنهادات پروژه
 router.get(
     '/getSuggest',
     authMiddleware,
     suggestprojectController.getSuggestProjectController.bind(suggestprojectController)
 );
 
+// مسیر برای دریافت پیشنهاد پروژه بر اساس شناسه
 router.get(
     '/getSuggest/:id',
+    authMiddleware,
     suggestprojectController.getSuggestProjectById.bind(suggestprojectController)
 );
+
 console.log("In suggestProjectRoutes - Route Reached");
 
 module.exports = router;
