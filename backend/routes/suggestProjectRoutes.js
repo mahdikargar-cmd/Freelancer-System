@@ -11,7 +11,6 @@ router.post(
     suggestprojectController.registerSuggestProjectController.bind(suggestprojectController)
 );
 
-// مسیر برای دریافت تمامی پیشنهادات پروژه
 router.get(
     '/getSuggest',
     authMiddleware,

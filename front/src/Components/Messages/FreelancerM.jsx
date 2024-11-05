@@ -19,7 +19,7 @@ export const FreelancerM = ({ onSuggestionClick }) => { // Accept onSuggestionCl
                 },
             });
             setGData(response.data.suggestions);
-            console.log(response.data.projects);
+            console.log(response.data.suggestions);
         } catch (error) {
             console.error("Error fetching freelancer messages:", error.response?.data || error);
         }

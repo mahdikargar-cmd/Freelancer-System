@@ -24,38 +24,36 @@ io.on("connection", (socket) => {
     console.log("کاربر متصل شد:", socket.id);
 
     socket.on("sendMessage", async (message) => {
+        console.log("Received message data on server:", message);
         const {employerId, projectId, content, senderRole} = message;
 
-        if (!content || !projectId || !senderRole) {
-            console.error("Some required parameters are missing:", { content, projectId, senderRole });
+        if (!["freelancer", "employer"].includes(senderRole)) {
+            console.error("Invalid senderRole received:", senderRole);
             return;
         }
 
-        try {
-            const newMessage = new Message({
-                content,
-                senderId: socket.id,
-                receiverId: employerId,
-                projectId,
-                role: senderRole
-            });
-            await newMessage.save();
-            console.log("Message saved successfully");
-        } catch (error) {
-            console.error("Error saving message:", error);
-        }
+        const newMessage = new Message({
+            content,
+            senderId: socket.id,
+            receiverId: employerId,
+            projectId,
+            role: senderRole
+        });
+        console.log(newMessage);
+        await newMessage.save();
     });
 
+
     socket.on("disconnect", () => {
-        console.log("user disconnected : ", socket.id);
+        console.log("user disconnected: ", socket.id);
     });
 });
 connectDb();
 app.use(express.json());
 app.use(cors({
     origin: 'http://localhost:3000',
-    methods: ['GET', 'POST', 'PUT', 'DELETE'], // متدهای مجاز
-    credentials: true, // اگر نیاز به ارسال کوکی‌ها دارید
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    credentials: true,
 }));
 
 app.use((req, res, next) => {
