@@ -15,10 +15,10 @@ export const FreelancerM = ({ onSuggestionClick }) => { // Accept onSuggestionCl
 
             const response = await axios.get("http://localhost:5000/api/suggestProject/freelancerMessages", {
                 headers: {
-                    Authorization: `Bearer ${token}`, // Fixed template literal syntax
+                    Authorization: `Bearer ${token}`,
                 },
             });
-            setGData(response.data.suggestions); // Adjusted for response structure
+            setGData(response.data.suggestions);
             console.log(response.data.projects);
         } catch (error) {
             console.error("Error fetching freelancer messages:", error.response?.data || error);

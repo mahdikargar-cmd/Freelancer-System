@@ -1,13 +1,12 @@
 const mongoose = require('mongoose');
 
 const MessageSchema = new mongoose.Schema({
-    userId: { type: String, required: true },
-    projectId: { type: String, required: true },
-    role: { type: String, required: true },
-    text: { type: String, required: true },
-    createdAt: { type: Date, default: Date.now }
+    content: { type: String, required: true },
+    senderId: { type: String, required: true },
+    receiverId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    projectId: { type: mongoose.Schema.Types.ObjectId, ref: 'Project', required: true },
+    role: { type: String, enum: ['freelancer', 'employer'], required: true },
+    timestamp: { type: Date, default: Date.now }
 });
 
-const MessageModel = mongoose.model('Message', MessageSchema);
-
-module.exports = MessageModel; // Make sure to use module.exports
+module.exports = mongoose.model('Message', MessageSchema);

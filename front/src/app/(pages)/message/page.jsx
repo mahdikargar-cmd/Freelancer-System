@@ -1,19 +1,18 @@
-// Other imports remain the same
 "use client"
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import io from "socket.io-client";
-import { FreelancerM } from "../../../Components/Messages/FreelancerM"; // Ensure correct path
-import { KarfarmaM } from "../../../Components/Messages/KarfarmaM"; // Ensure correct path
+import { FreelancerM } from "../../../Components/Messages/FreelancerM";
+import { KarfarmaM } from "../../../Components/Messages/KarfarmaM";
 import { useAuth } from "../../context/AuthContext";
+import axios from "axios";
 
-const socket = io("http://localhost:5000");
+let socket;  // متغیر `socket` را در اینجا تعریف کنید
 
 function Message() {
-    const { isLoggedIn } = useAuth(); // دریافت وضعیت ورود از Context
+    const { isLoggedIn } = useAuth();
     const router = useRouter();
     const [isMounted, setIsMounted] = useState(false);
-
     const [freelancerM, setFreelancerM] = useState(false);
     const [karfarmaM, setKarfarmaM] = useState(false);
     const [isChatActive, setIsChatActive] = useState(false);
@@ -30,6 +29,18 @@ function Message() {
             router.push("/login");
         }
     }, [isMounted, isLoggedIn]);
+
+    useEffect(() => {
+        socket = io("http://localhost:5000");
+
+        socket.on("receiveMessage", (messageData) => {
+            setChatMessage((prev) => [...prev, messageData]);
+        });
+
+        return () => {
+            socket.disconnect();
+        };
+    }, []);
 
     const FreelancerMessage = () => {
         setFreelancerM(true);
@@ -49,32 +60,44 @@ function Message() {
     };
 
     const sendMessage = () => {
-        if (message.trim()) {
-            const role = freelancerM ? "freelancer" : "karfarma";
+        if (socket && message.trim() && selectedSuggestion) {
+            const role = freelancerM ? "freelancer" : "employer";  // تعیین نقش بر اساس وضعیت فعلی
+
             const messageData = {
-                text: message,
-                role: role,
-                suggestionId: selectedSuggestion._id,
-                employerId: selectedSuggestion.user
+                content: message,
+                projectId: selectedSuggestion._id,
+                employerId: selectedSuggestion.user,
+                senderRole: role  // نقش فرستنده
             };
 
+            if (!messageData.senderRole || !messageData.content || !messageData.projectId) {
+                console.error("Some required parameters are missing:", messageData);
+                return;
+            }
+
             socket.emit("sendMessage", messageData);
-            setChatMessage((prev) => [...prev, messageData]);
-            setMessage("");
+            setChatMessage((prev) => [...prev, messageData]);  // اضافه کردن پیام به پیام‌های چت
+            setMessage("");  // پاک کردن ورودی پیام
+        } else {
+            console.error("Some required parameters are missing", {message, selectedSuggestion, role});
         }
     };
 
-    useEffect(() => {
-        socket.on("receiveMessage", (messages) => {
-            setChatMessage(messages);
-        });
 
-        return () => {
-            socket.off("receiveMessage");
-        };
+
+    useEffect(() => {
+        if (selectedSuggestion) {
+            axios.get(`http://localhost:5000/api/messages/project/${selectedSuggestion._id}`)
+                .then(response => {
+                    setChatMessage(response.data);
+                })
+                .catch(error => {
+                    console.error("خطا در بارگذاری پیام‌ها:", error);
+                });
+        }
     }, [selectedSuggestion]);
 
-    if (!isMounted || !isLoggedIn) return null; // Prevent rendering if not logged in
+    if (!isMounted || !isLoggedIn) return null;
 
     return (
         <div className={"mt-4 pb-5 flex justify-center"}>
@@ -94,7 +117,7 @@ function Message() {
                                 پیام های کارفرمایی
                             </button>
                         </div>
-                        {freelancerM && <FreelancerM onSuggestionClick={handleSuggestionClick} />} {/* Pass the function here */}
+                        {freelancerM && <FreelancerM onSuggestionClick={handleSuggestionClick} />}
                         {karfarmaM && <KarfarmaM onSuggestionClick={handleSuggestionClick} />}
                     </div>
                     <div className={`col-span-8 bg-gray-200 chat ${isChatActive ? "" : "hidden"}`}>
@@ -122,8 +145,8 @@ function Message() {
                         )}
                         <div className="overflow-y-auto p-4">
                             {chatMessage.map((msg, index) => (
-                                <div key={index} className={`p-2 ${msg.role === "freelancer" ? "text-right" : "text-left"}`}>
-                                    <span>{msg.role === "freelancer" ? "فریلنسر" : "کارفرما"}: {msg.text}</span>
+                                <div key={index} className={`p-2 ${msg.senderRole === "freelancer" ? "text-right" : "text-left"}`}>
+                                    <span>{msg.senderRole === "freelancer" ? "فریلنسر" : "کارفرما"}: {msg.content}</span>
                                 </div>
                             ))}
                         </div>

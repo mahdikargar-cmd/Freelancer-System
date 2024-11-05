@@ -20,9 +20,8 @@
                     },
                 });
 
-                // Change from projectId to suggestions
                 setKarfarmaMessage(Array.isArray(response.data.suggestions) ? response.data.suggestions : []);
-                console.log("Suggestions:", response.data.suggestions); // Log the suggestions array
+                console.log("Suggestions:", response.data.suggestions);
             } catch (error) {
                 console.log("error: ", error);
             }
