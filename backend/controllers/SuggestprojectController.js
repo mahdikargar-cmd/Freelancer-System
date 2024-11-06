@@ -30,7 +30,6 @@ class SuggestProjectController {
             res.status(500).json({ message: 'خطا در ثبت پیشنهاد پروژه', error });
         }
     }
-    // دریافت پیام‌های کارفرما
     async getEmployerMessages(req, res) {
         try {
             const employerId = req.user?.id;
@@ -50,14 +49,15 @@ class SuggestProjectController {
     async getFreelancerMessages(req, res) {
         try {
             const freelancerId = req.user?.id;
-
             const suggestions = await SuggestProjectModel.find({ user: freelancerId });
-            res.status(200).json({ suggestions });
+
+            res.status(200).json({ suggestions }); // Return suggestions
         } catch (error) {
             console.error('Error fetching freelancer messages:', error);
             res.status(500).json({ message: 'خطا در دریافت پیام‌های فریلنسر', error });
         }
     }
+
     async getSuggestProjectController(req, res) {
         try {
             const employerId = req.user?.id;
@@ -67,7 +67,6 @@ class SuggestProjectController {
                 res.status(400).json({ message: 'شناسه کارفرما یافت نشد' });
                 return;
             }
-
             // فیلتر بر اساس شناسه کارفرما و نقش فریلنسر
             const suggestProjects = await SuggestProjectModel.find({ user: employerId, role: 'freelancer' });
 
