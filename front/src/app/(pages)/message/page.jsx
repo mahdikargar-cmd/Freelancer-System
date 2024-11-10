@@ -19,6 +19,7 @@ function Message() {
     const [message, setMessage] = useState("");
     const [chatMessages, setChatMessages] = useState([]);
     const [selectedSuggestion, setSelectedSuggestion] = useState(null);
+    const [aiLocked, setAiLocked] = useState(false);
 
     useEffect(() => {
         setIsMounted(true);
@@ -43,6 +44,21 @@ function Message() {
             }
         };
     }, []);
+    useEffect(() => {
+        if (selectedSuggestion) {
+            axios.get(`http://localhost:5000/api/messages/project/${selectedSuggestion._id}`)
+                .then(response => {
+                    setChatMessages(response.data.map(msg => ({
+                        ...msg,
+                        senderRole: msg.role // Map role to senderRole
+                    })));
+                    console.log("chatMessages in get: ", response.data);
+                })
+                .catch(error => {
+                    console.error("Error loading messages:", error);
+                });
+        }
+    }, [selectedSuggestion]);
 
     const FreelancerMessage = () => {
         setFreelancerM(true);
@@ -79,22 +95,21 @@ function Message() {
             console.error("Some required parameters are missing", {message, selectedSuggestion});
         }
     };
-
-    useEffect(() => {
-        if (selectedSuggestion) {
-            axios.get(`http://localhost:5000/api/messages/project/${selectedSuggestion._id}`)
-                .then(response => {
-                    setChatMessages(response.data.map(msg => ({
-                        ...msg,
-                        senderRole: msg.role // Map role to senderRole
-                    })));
-                    console.log("chatMessages in get: ", response.data);
-                })
-                .catch(error => {
-                    console.error("Error loading messages:", error);
-                });
+    const toggleAi = async () => {
+        if (!selectedSuggestion) {
+            console.error("No project selected");
+            return;
         }
-    }, [selectedSuggestion]);
+
+        try {
+            const projectId = selectedSuggestion._id; // استخراج projectId از selectedSuggestion
+            const response = await axios.post("http://localhost:5000/api/toggleAI", { projectId });
+            setAiLocked(response.data.aiLocked);
+        } catch (error) {
+            console.error("Error toggling AI:", error);
+        }
+    };
+
 
 
     if (!isMounted || !isLoggedIn) return null;
@@ -151,7 +166,7 @@ function Message() {
                                                 msg.senderRole === "freelancer" ? "bg-blue-200 self-start text-right" : "bg-green-200 self-end text-left"
                                             }`}
                                         >
-                                            <p>{msg.content}</p>    
+                                            <p>{msg.content}</p>
                                             <span className="text-sm text-gray-600">
                                                 فرستنده: {
                                                 msg.senderRole === "freelancer" ? "فریلنسر" :
@@ -170,6 +185,9 @@ function Message() {
                                         className="flex-grow p-2 border rounded-l-md"
                                         placeholder="پیام خود را بنویسید..."
                                     />
+                                    <button onClick={toggleAi} className="bg-red-500 text-white p-2 rounded">
+                                        {aiLocked ? "Enable AI" : "Disable AI"}
+                                    </button>
                                     <button onClick={sendMessage} className="bg-blue-500 text-white p-2 rounded-r-md">
                                         ارسال پیام
                                     </button>

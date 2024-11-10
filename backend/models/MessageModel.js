@@ -25,6 +25,10 @@ const MessageSchema = new mongoose.Schema({
     createdAt: {
         type: Date,
         default: Date.now
+    },
+    aiLocked: {
+        type: Boolean,
+        default: false
     }
 });
 

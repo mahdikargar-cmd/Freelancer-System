@@ -3,6 +3,8 @@ const connectDb = require("./config/db");
 const authRoutes = require("./routes/authRoutes");
 const createProject = require("./routes/createProjectRouter");
 const suggestProject = require("./routes/suggestProjectRoutes");
+const toggleAIRoute = require("./routes/toggleAIRoute");
+
 const cors = require("cors");
 const dotenv = require("dotenv");
 const http = require("http");
@@ -97,6 +99,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/createProject", createProject);
 app.use("/api/suggestProject", suggestProject);
 app.use("/api/messages", messageRoutes);
+app.use("/api", toggleAIRoute);
 
 const PORT = 5000;
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
