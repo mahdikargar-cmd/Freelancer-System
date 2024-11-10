@@ -1,4 +1,4 @@
-"use client";
+"use client"
 import React, {useEffect, useState} from "react";
 import {useRouter} from "next/navigation";
 import io from "socket.io-client";
@@ -70,7 +70,7 @@ function Message() {
                 content: message,
                 projectId: selectedSuggestion._id,
                 employerId: selectedSuggestion.user,
-                senderRole: role
+                senderRole: role,
             };
             socket.emit("sendMessage", messageData);
             setChatMessages((prev) => [...prev, {...messageData, senderRole: role}]);
@@ -80,20 +80,18 @@ function Message() {
         }
     };
 
-    console.log("chatMessages in get : ", chatMessages)
-
     useEffect(() => {
         if (selectedSuggestion) {
             axios.get(`http://localhost:5000/api/messages/project/${selectedSuggestion._id}`)
                 .then(response => {
                     setChatMessages(response.data.map(msg => ({
                         ...msg,
-                        senderRole: msg.role  // نگاشت role به senderRole برای استفاده در فرانت‌اند
+                        senderRole: msg.role // Map role to senderRole
                     })));
-                    console.log("chatMessages in get : ", chatMessages);
+                    console.log("chatMessages in get: ", response.data);
                 })
                 .catch(error => {
-                    console.error("خطا در بارگذاری پیام‌ها:", error);
+                    console.error("Error loading messages:", error);
                 });
         }
     }, [selectedSuggestion]);
@@ -125,41 +123,42 @@ function Message() {
                     </div>
                     <div className={`col-span-8 bg-gray-200 chat ${isChatActive ? "" : "hidden"}`}>
                         {selectedSuggestion ? (
-                            <div className={''}>
-                                <div className={'border-amber-200 border-2 bg-white m-6 rounded-full p-4'}>
-                                    <div className={'grid grid-cols-12'}>
-                                        <div className={'col-span-12 flex justify-center'}>
+                            <div>
+                                <div className={"border-amber-200 border-2 bg-white m-6 rounded-full p-4"}>
+                                    <div className={"grid grid-cols-12"}>
+                                        <div className={"col-span-12 flex justify-center"}>
                                             <h3>پیشنهاد پروژه: {selectedSuggestion.subject}</h3>
                                         </div>
                                     </div>
                                     <div className="grid grid-cols-12">
-                                        <div className={'col-span-12 flex justify-between'}>
+                                        <div className={"col-span-12 flex justify-between"}>
                                             <p>قیمت: {selectedSuggestion.price}</p>
                                             <p>مدت زمان: {selectedSuggestion.deadline} روز</p>
                                         </div>
                                     </div>
                                     <div className="grid grid-cols-12">
-                                        <div className={'col-span-12 pb-4 p-2'}>
+                                        <div className={"col-span-12 pb-4 p-2"}>
                                             <p>توضیحات: {selectedSuggestion.description}</p>
                                         </div>
                                     </div>
-
-
                                 </div>
-                                <div className="bg-gray-200 chat-content overflow-y-scroll h-[250px] p-4 bg-gray-100 flex flex-col">
+                                <div
+                                    className="bg-gray-200 chat-content overflow-y-scroll h-[250px] p-4 bg-gray-100 flex flex-col">
                                     {chatMessages.map((msg, index) => (
                                         <div
                                             key={index}
-                                            className={`p-2 w-[300px] my-2 rounded-md ${
-                                                msg.senderRole === "freelancer"
-                                                    ? "bg-blue-200 self-start text-right"
-                                                    : "bg-green-200 self-end text-left"
+                                            className={`p-2 w-[300px] my-2 rounded-md  ${
+                                                msg.senderRole === "freelancer" ? "bg-blue-200 self-start text-right" : "bg-green-200 self-end text-left"
                                             }`}
                                         >
-                                            <p>{msg.content}</p>
+                                            <p>{msg.content}</p>    
                                             <span className="text-sm text-gray-600">
-                فرستنده: {msg.senderRole === "freelancer" ? "فریلنسر" : "کارفرما"}
-            </span>
+                                                فرستنده: {
+                                                msg.senderRole === "freelancer" ? "فریلنسر" :
+                                                    msg.senderRole === "employer" ? "کارفرما" :
+                                                        "هوش مصنوعی"
+                                            }
+                                            </span>
                                         </div>
                                     ))}
                                 </div>
@@ -171,14 +170,10 @@ function Message() {
                                         className="flex-grow p-2 border rounded-l-md"
                                         placeholder="پیام خود را بنویسید..."
                                     />
-                                    <button
-                                        onClick={sendMessage}
-                                        className="bg-blue-500 text-white p-2 rounded-r-md"
-                                    >
+                                    <button onClick={sendMessage} className="bg-blue-500 text-white p-2 rounded-r-md">
                                         ارسال پیام
                                     </button>
                                 </div>
-
                             </div>
                         ) : (
                             <div className="flex justify-center items-center h-full">
