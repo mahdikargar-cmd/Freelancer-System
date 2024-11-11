@@ -23,22 +23,35 @@ const io = new Server(server, {
     }
 });
 
+// Map to store chat states
+const chatStates = new Map();
+
+const getChatState = (projectId) => {
+    if (!chatStates.has(projectId)) {
+        chatStates.set(projectId, {
+            questionIndex: 0,
+            isAssessmentComplete: false
+        });
+    }
+    return chatStates.get(projectId);
+};
 
 io.on("connection", (socket) => {
     console.log("کاربر متصل شد:", socket.id);
 
     socket.on("sendMessage", async (message) => {
-        const { employerId, projectId, content, senderRole } = message;
+        const {employerId, projectId, content, senderRole} = message;
 
-        // Confirm the role is freelancer before saving or responding as freelancer
         if (senderRole !== "freelancer") {
             console.error("Invalid senderRole detected:", senderRole);
             return;
         }
 
         try {
-            // Save the freelancer's message to the database
-            const newMessage = new Message({
+            const chatState = getChatState(projectId);
+
+            // ذخیره پیام فریلنسر در دیتابیس
+            const freelancerMessage = new Message({
                 content,
                 senderId: socket.id,
                 receiverId: employerId,
@@ -46,27 +59,43 @@ io.on("connection", (socket) => {
                 role: senderRole
             });
 
-            await newMessage.save();
+            await freelancerMessage.save();
+            // ارسال پیام فریلنسر به فرانت‌اند
+            socket.emit("receiveMessage", freelancerMessage);
 
-            // Generate an AI response if the role is freelancer
-            const response = await axios.post('http://localhost:5001/generate', {
-                prompt: content
-            });
-            const aiResponse = response.data.response;
+            // بررسی قفل بودن هوش مصنوعی
+            const project = await Message.findOne({ projectId });
+            if (project && !project.aiLocked) {
+                // درخواست پاسخ از هوش مصنوعی
+                const response = await axios.post('http://localhost:5001/generate', {
+                    prompt: content,
+                    context: {
+                        projectId,
+                        question_index: chatState.questionIndex
+                    }
+                });
 
-            // Save and emit the AI's response as a separate message
-            const aiMessage = new Message({
-                content: aiResponse,
-                senderId: "system",
-                receiverId: employerId,
-                projectId,
-                role: "system"
-            });
-            await aiMessage.save();
+                // افزایش شمارنده سوال
+                if (!chatState.isAssessmentComplete) {
+                    chatState.questionIndex++;
+                    if (chatState.questionIndex >= 3) {
+                        chatState.isAssessmentComplete = true;
+                    }
+                }
 
-            // Emit both freelancer's message and AI's response
-            socket.emit("receiveMessage", newMessage);
-            socket.emit("receiveMessage", aiMessage);
+                // ذخیره و ارسال پاسخ هوش مصنوعی
+                const aiMessage = new Message({
+                    content: response.data.response,
+                    senderId: "system",
+                    receiverId: employerId,
+                    projectId,
+                    role: "system"
+                });
+                await aiMessage.save();
+
+                // فقط ارسال پاسخ هوش مصنوعی
+                socket.emit("receiveMessage", aiMessage);
+            }
         } catch (error) {
             console.error("Error in sendMessage:", error);
         }
@@ -77,6 +106,16 @@ io.on("connection", (socket) => {
     });
 });
 
+// پاکسازی وضعیت‌های قدیمی هر ساعت
+setInterval(() => {
+    const oneHourAgo = Date.now() - (60 * 60 * 1000);
+    chatStates.forEach((state, projectId) => {
+        if (state.lastUpdated < oneHourAgo) {
+            chatStates.delete(projectId);
+        }
+    });
+}, 60 * 60 * 1000);
+
 connectDb();
 app.use(express.json());
 app.use(cors({
@@ -86,7 +125,6 @@ app.use(cors({
 }));
 
 app.use((req, res, next) => {
-    console.log("Incoming Request Body:", req.body);
     console.log("Incoming Request:", {
         body: req.body,
         ...(req.file && {file: req.file})
