@@ -2,14 +2,19 @@ import axios from "axios";
 
 const askProjectQuestions = async (projectId) => {
     try {
-        const response = await axios.post('http://localhost:5001/ask_project_questions', {
-            projectId: projectId
+        const response = await axios.post('http://localhost:5001/evaluate_answer', {
+            prompt: content,
+            context: {
+                projectId,
+                question_index: chatState.questionIndex
+            }
         });
-        return response.data.responses;
+        console.log("AI Response:", response.data); // Check the actual AI response data
+
     } catch (error) {
-        console.error("Error in askProjectQuestions:", error);
-        return [];
+        console.error("Error in sending message to AI:", error);
     }
+
 };
 
 // در اینجا باید وضعیت قفل شدن AI را بررسی کرده و تغییر دهیم

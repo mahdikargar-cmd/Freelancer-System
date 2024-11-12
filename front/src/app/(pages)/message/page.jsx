@@ -10,7 +10,7 @@ import axios from "axios";
 let socket;
 
 function Message() {
-    const {isLoggedIn} = useAuth();
+    const { isLoggedIn } = useAuth();
     const router = useRouter();
     const [isMounted, setIsMounted] = useState(false);
     const [freelancerM, setFreelancerM] = useState(false);
@@ -44,19 +44,18 @@ function Message() {
             }
         };
     }, []);
+
     useEffect(() => {
         if (selectedSuggestion) {
-            axios.get(`http://localhost:5000/api/messages/project/${selectedSuggestion._id}`)
+            axios
+                .get(`http://localhost:5000/api/messages/project/${selectedSuggestion._id}`)
                 .then(response => {
                     setChatMessages(response.data.map(msg => ({
                         ...msg,
-                        senderRole: msg.role // Map role to senderRole
+                        senderRole: msg.role
                     })));
-                    console.log("chatMessages in get: ", response.data);
                 })
-                .catch(error => {
-                    console.error("Error loading messages:", error);
-                });
+                .catch(error => console.error("Error loading messages:", error));
         }
     }, [selectedSuggestion]);
 
@@ -89,12 +88,13 @@ function Message() {
                 senderRole: role,
             };
             socket.emit("sendMessage", messageData);
-            setChatMessages((prev) => [...prev, {...messageData, senderRole: role}]);
+            setChatMessages((prev) => [...prev, { ...messageData, senderRole: role }]);
             setMessage("");
         } else {
-            console.error("Some required parameters are missing", {message, selectedSuggestion});
+            console.error("Some required parameters are missing", { message, selectedSuggestion });
         }
     };
+
     const toggleAi = async () => {
         if (!selectedSuggestion) {
             console.error("No project selected");
@@ -102,7 +102,7 @@ function Message() {
         }
 
         try {
-            const projectId = selectedSuggestion._id; // استخراج projectId از selectedSuggestion
+            const projectId = selectedSuggestion._id;
             const response = await axios.post("http://localhost:5000/api/toggleAI", { projectId });
             setAiLocked(response.data.aiLocked);
         } catch (error) {
@@ -110,10 +110,7 @@ function Message() {
         }
     };
 
-
-
     if (!isMounted || !isLoggedIn) return null;
-
     return (
         <div className={"mt-4 pb-5 flex justify-center"}>
             <div className={"bg-amber-50 w-[1000px] h-[90vh]"}>
