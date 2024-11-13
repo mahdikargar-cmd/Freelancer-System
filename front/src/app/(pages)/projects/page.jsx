@@ -10,17 +10,18 @@ const ProjectsPage = () => {
     const [skills, setSkills] = useState("");
     const [progress, setProgress] = useState("");
     const [search, setSearch] = useState("");
-
     const fetchProjects = async () => {
         try {
             const response = await axios.get("http://localhost:5000/api/createProject", {
                 params: { category, skills, progress, search }
             });
+            console.log("Projects Data:", response.data); // چاپ داده‌های دریافتی
             setProjects(response.data);
         } catch (error) {
             console.error("Error fetching projects", error);
         }
     };
+    
 
     useEffect(() => {
         fetchProjects();
@@ -92,14 +93,18 @@ const ProjectsPage = () => {
 
             {/* Projects List */}
             {projects.length > 0 ? (
-                projects.map((project, index) => (
+                projects.map((project) => (
                     <div key={project._id} className="grid grid-cols-12">
                         <div className="col-span-12 flex justify-center mt-4">
                             <div className="w-[900px] bg-amber-50 p-5 rounded-lg shadow-inner">
                                 <div className="grid grid-cols-12">
                                     <div className="col-span-12 flex justify-between">
                                         <p className="text-xl font-bold">{project.subject}</p>
-                                        <p>قیمت پیشنهادی کارفرما بین {project.range.min} تا {project.range.max} میلیون</p>
+                                        <p>
+    {project.range 
+        ? `قیمت پیشنهادی کارفرما بین ${project.range.min} تا ${project.range.max} میلیون`
+        : "قیمت نامشخص"}
+</p>
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-6 mt-4">

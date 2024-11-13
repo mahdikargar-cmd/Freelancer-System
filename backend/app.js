@@ -40,37 +40,40 @@ const getChatState = (projectId) => {
 
 
 io.on("connection", (socket) => {
-    console.log("کاربر متصل شد:", socket.id);
+    console.log("user connected : ", socket.id);
 
     socket.on("sendMessage", async (message) => {
         const { employerId, projectId, content, senderRole } = message;
     
-        if (senderRole !== "freelancer") {
+        if (senderRole !== "freelancer" && senderRole !== "employer") {
             console.error("Invalid senderRole detected:", senderRole);
             return;
         }
     
         try {
-            const chatState = getChatState(projectId);
+            // بررسی وضعیت قفل هوش مصنوعی برای پروژه
+            const project = await Message.findOne({ projectId });
     
-            // ذخیره پیام فریلنسر
-            const freelancerMessage = new Message({
+            // ذخیره پیام در هر صورت (چه هوش مصنوعی قفل باشد و چه نباشد)
+            const newMessage = new Message({
                 content,
-                senderId: socket.id,
-                receiverId: employerId,
+                senderId: senderRole === "employer" ? employerId : socket.id,
+                receiverId: senderRole === "employer" ? socket.id : employerId,
                 projectId,
                 role: senderRole
             });
     
-            await freelancerMessage.save();
-            socket.emit("receiveMessage", freelancerMessage);
+            await newMessage.save();
+            socket.emit("receiveMessage", newMessage);
     
-            // بررسی وضعیت قفل بودن هوش مصنوعی
-            const project = await Message.findOne({ projectId });
-            if (project && !project.aiLocked) {
-                console.log("AI is unlocked, generating response...");
+            // اگر هوش مصنوعی قفل است، به جای تولید پاسخ از هوش مصنوعی فقط پیام را ذخیره کنید و به کاربر نمایش دهید
+            if (project && project.aiLocked) {
+                console.log(`AI is locked for project ${projectId}. No AI response.`);
+                return; // از ادامه اجرا خارج می‌شود تا هوش مصنوعی فعال نشود
+            }
     
-                // درخواست پاسخ از هوش مصنوعی
+            // کد مربوط به تولید پاسخ از هوش مصنوعی در صورت فعال بودن
+            if (senderRole === "freelancer" && !project.aiLocked) {
                 const aiResponse = await axios.post('http://localhost:5001/evaluate_answer', {
                     answer: content,
                     context: {
@@ -78,9 +81,8 @@ io.on("connection", (socket) => {
                         projectType: project.projectType || 'default'
                     }
                 });
-
+    
                 if (aiResponse.data && aiResponse.data.status === "success") {
-                    // ایجاد و ذخیره پیام فیدبک
                     const feedbackMessage = new Message({
                         content: aiResponse.data.feedback,
                         senderId: "system",
@@ -90,8 +92,7 @@ io.on("connection", (socket) => {
                     });
                     await feedbackMessage.save();
                     socket.emit("receiveMessage", feedbackMessage);
-
-                    // اگر سوال بعدی وجود دارد و ارزیابی کامل نشده، آن را ارسال کنید
+    
                     if (aiResponse.data.next_question && !aiResponse.data.is_complete) {
                         const questionMessage = new Message({
                             content: aiResponse.data.next_question,
@@ -103,19 +104,15 @@ io.on("connection", (socket) => {
                         await questionMessage.save();
                         socket.emit("receiveMessage", questionMessage);
                     }
-                } else {
-                    console.warn("Invalid AI response format:", aiResponse.data);
-                    throw new Error("Invalid AI response format");
                 }
-            } else {
-                console.log("AI is locked or project not found, skipping AI response.");
             }
         } catch (error) {
-            console.error("Error in sendMessage:", error);
-            // ارسال پیام خطا به کاربر
-            socket.emit("error", { message: "خطا در پردازش پیام" });
+            console.error("Error saving message:", error);
+            socket.emit("error", { message: "خطا در ذخیره پیام" });
         }
     });
+    
+    
 });
 
 // پاکسازی وضعیت‌های قدیمی هر ساعت

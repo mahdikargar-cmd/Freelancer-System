@@ -7,12 +7,13 @@ const createSchema = new Schema({
   file: { type: String, required: false },
   skills: { type: [String], required: true },
   range: {
-    min: { type: Number, required: true },
-    max: { type: Number, required: true }
+      min: { type: Number, required: true },
+      max: { type: Number, required: true }
   },
   role: { type: String, enum: 'employer', required: true },
   user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   createdAt: { type: Date, default: Date.now }
 });
+
 
 module.exports = model('CreateProject', createSchema);

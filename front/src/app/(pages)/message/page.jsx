@@ -45,7 +45,12 @@ function Message() {
             }
         };
     }, []);
+   useEffect(() => {
+    const role = localStorage.getItem("userRole");
+    if (role) setUserRole(role);
+}, []);
 
+    
     useEffect(() => {
         if (selectedSuggestion) {
             axios
@@ -57,8 +62,17 @@ function Message() {
                     })));
                 })
                 .catch(error => console.error("Error loading messages:", error));
+    
+            // دریافت وضعیت هوش مصنوعی
+            axios.get(`http://localhost:5000/api/toggleAI/status/${selectedSuggestion._id}`)
+                .then(statusResponse => {
+                    setAiLocked(statusResponse.data);
+                })
+                .catch(error => console.error("Error fetching AI status:", error));
         }
     }, [selectedSuggestion]);
+    
+    
 
     const FreelancerMessage = () => {
         setFreelancerM(true);
@@ -80,15 +94,24 @@ function Message() {
     };
 
     const sendMessage = () => {
+        const role = localStorage.getItem("userRole");
+    
+        // اگر هوش مصنوعی قفل باشد و نقش کاربر فریلنسر باشد، پیام ارسال نمی‌شود
+        if (aiLocked && role === "freelancer") {
+            console.log("هوش مصنوعی غیرفعال است، پیام فریلنسر پردازش نمی‌شود.");
+            setChatMessages((prev) => [...prev, { content: message, senderRole: role }]); // پیام فقط در چت نمایش داده می‌شود
+            setMessage("");
+            return;
+        }
+    
         if (socket && message.trim() && selectedSuggestion) {
-            const role = localStorage.getItem("userRole");
             const messageData = {
                 content: message,
                 projectId: selectedSuggestion._id,
                 employerId: selectedSuggestion.user,
                 senderRole: role,
             };
-            
+    
             socket.emit("sendMessage", messageData);
             setChatMessages((prev) => [...prev, { ...messageData, senderRole: role }]);
             setMessage("");
@@ -97,23 +120,28 @@ function Message() {
         }
     };
     
+    
+    
     const toggleAi = async () => {
         if (!selectedSuggestion) {
             console.error("No project selected");
             return;
         }
-
+    
         try {
             const projectId = selectedSuggestion._id;
             const response = await axios.post("http://localhost:5000/api/toggleAI", { projectId });
-            setAiLocked(response.data.aiLocked);
+            setAiLocked(response.data);
         } catch (error) {
             console.error("Error toggling AI:", error);
         }
     };
+    
+    
+    
 
     const renderToggleButton = () => {
-        if (userRole === 'employer' && selectedSuggestion) {
+        if (userRole === "employer" && selectedSuggestion) {
             return (
                 <button onClick={toggleAi}>
                     {aiLocked ? "فعال کردن هوش مصنوعی" : "غیرفعال کردن هوش مصنوعی"}
@@ -122,7 +150,26 @@ function Message() {
         }
         return null;
     };
+    
+    
+    useEffect(() => {
+        if (isMounted) {
+            socket = io("http://localhost:5000");
+            socket.on("receiveMessage", (messageData) => {
+                setChatMessages((prev) => [...prev, messageData]);
+            });
+        }
+        return () => {
+            if (socket) {
+                socket.disconnect();
+            }
+        };
+    }, [isMounted]);
+    
+    
 
+
+    
     if (!isMounted || !isLoggedIn) return null;
 
     return (
