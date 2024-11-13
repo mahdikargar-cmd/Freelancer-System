@@ -20,6 +20,7 @@ function Message() {
     const [chatMessages, setChatMessages] = useState([]);
     const [selectedSuggestion, setSelectedSuggestion] = useState(null);
     const [aiLocked, setAiLocked] = useState(false);
+    const [userRole, setUserRole] = useState('');
 
     useEffect(() => {
         setIsMounted(true);
@@ -87,6 +88,7 @@ function Message() {
                 employerId: selectedSuggestion.user,
                 senderRole: role,
             };
+            
             socket.emit("sendMessage", messageData);
             setChatMessages((prev) => [...prev, { ...messageData, senderRole: role }]);
             setMessage("");
@@ -94,7 +96,7 @@ function Message() {
             console.error("Some required parameters are missing", { message, selectedSuggestion });
         }
     };
-
+    
     const toggleAi = async () => {
         if (!selectedSuggestion) {
             console.error("No project selected");
@@ -110,7 +112,19 @@ function Message() {
         }
     };
 
+    const renderToggleButton = () => {
+        if (userRole === 'employer' && selectedSuggestion) {
+            return (
+                <button onClick={toggleAi}>
+                    {aiLocked ? "فعال کردن هوش مصنوعی" : "غیرفعال کردن هوش مصنوعی"}
+                </button>
+            );
+        }
+        return null;
+    };
+
     if (!isMounted || !isLoggedIn) return null;
+
     return (
         <div className={"mt-4 pb-5 flex justify-center"}>
             <div className={"bg-amber-50 w-[1000px] h-[90vh]"}>
@@ -182,9 +196,7 @@ function Message() {
                                         className="flex-grow p-2 border rounded-l-md"
                                         placeholder="پیام خود را بنویسید..."
                                     />
-                                    <button onClick={toggleAi} className="bg-red-500 text-white p-2 rounded">
-                                        {aiLocked ? "Enable AI" : "Disable AI"}
-                                    </button>
+                                    {renderToggleButton()}
                                     <button onClick={sendMessage} className="bg-blue-500 text-white p-2 rounded-r-md">
                                         ارسال پیام
                                     </button>
