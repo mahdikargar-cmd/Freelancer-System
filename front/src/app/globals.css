@@ -8,6 +8,7 @@
   --background: #dbeafe;
   --foreground: #000000;
   --bgComponent:#fffbeb;
+  --bgbackground:#fffbeb;
 }
 
 @media (prefers-color-scheme: dark) {

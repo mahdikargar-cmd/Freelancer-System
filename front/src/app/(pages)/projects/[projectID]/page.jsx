@@ -87,7 +87,7 @@ function ProjectCheckout() {
         <>
             <div className="flex justify-center mt-4 items-center">
                 {getData.map((item, index) => (
-                    <div key={index} className="w-[900px] bg-amber-50 p-3 rounded">
+                    <div key={index} className="w-[900px] bg-amber-50 p-3 rounded shadow-lg">
                         <div className="grid grid-cols-12">
                             <div className="col-span-12 flex justify-between items-center">
                                 <p className="font-bold text-[20px]">{item.subject}</p>
@@ -113,40 +113,74 @@ function ProjectCheckout() {
 
             {modal && (
                 <form onSubmit={handleSubmit(postData)}>
-                    <div id="modalBackground" onClick={closeModal} className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-                        <div className="bg-amber-50 w-[800px] h-[700px] p-6 rounded-lg text-center">
-                            <div className="grid grid-cols-12 m-2">
-                                <div className="col-span-6 p-2 flex justify-between">
-                                    <p>موضوع</p>
-                                    <input type="text" {...register("subject", { required: true })} className="bg-gray-400 rounded"/>
+                    <div
+                        id="modalBackground"
+                        onClick={closeModal}
+                        className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+                        <div className="bg-white w-full max-w-3xl mx-auto h-auto p-6 rounded-lg shadow-2xl relative">
+                            <button
+                                type="button"
+                                onClick={closeModal}
+                                className="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+                                ✕
+                            </button>
+
+                            <h2 className="text-2xl font-semibold text-center mb-6">ثبت پیشنهاد روی پروژه</h2>
+
+                            <div className="grid grid-cols-12 gap-4 mb-4">
+                                <div className="col-span-6">
+                                    <label className="block mb-1 text-gray-700">موضوع</label>
+                                    <input
+                                        type="text"
+                                        {...register("subject", { required: true })}
+                                        className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    />
                                 </div>
-                                <div className="col-span-6 p-2 flex justify-between">
-                                    <p>مدت زمان انجام پروژه</p>
-                                    <input type="text" {...register("deadline", { required: true })} className="bg-gray-400 rounded"/>
+                                <div className="col-span-6">
+                                    <label className="block mb-1 text-gray-700">مدت زمان انجام پروژه</label>
+                                    <input
+                                        type="text"
+                                        {...register("deadline", { required: true })}
+                                        className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    />
                                 </div>
                             </div>
-                            <div className="grid grid-cols-12">
-                                <div className="col-span-12 mt-8 flex justify-evenly items-center">
-                                    <p>چرا کارفرما باید به شما اعتماد کند؟</p>
-                                    <textarea {...register("description", { required: true })} className="bg-gray-400 w-[500px] h-[300px] rounded"/>
-                                </div>
+
+                            <div className="mb-4">
+                                <label className="block mb-1 text-gray-700">چرا کارفرما باید به شما اعتماد کند؟</label>
+                                <textarea
+                                    {...register("description", { required: true })}
+                                    className="w-full h-32 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
                             </div>
-                            <div className="grid grid-cols-12">
-                                <div className="col-span-12 mt-8 flex justify-evenly items-center">
-                                    <p>قیمت پیشنهادی تون روی پروژه</p>
-                                    <input type="text" {...register("price", { required: "Please enter a price" })} className="bg-gray-400 rounded"/>
-                                </div>
+
+                            <div className="mb-8">
+                                <label className="block mb-1 text-gray-700">قیمت پیشنهادی شما</label>
+                                <input
+                                    type="text"
+                                    {...register("price", { required: "Please enter a price" })}
+                                    className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
                             </div>
-                            <div className="grid grid-cols-12">
-                                <div className="col-span-12 mt-32 flex justify-evenly">
-                                    <button onClick={closeModal} className="bg-red-500 text-white p-1 ps-3 pl-3 rounded">لغو</button>
-                                    <button type="submit" className="bg-green-500 text-white p-1 ps-3 pl-3 rounded">ثبت برروی پروژه</button>
-                                </div>
+
+                            <div className="flex justify-center gap-4">
+                                <button
+                                    type="button"
+                                    onClick={closeModal}
+                                    className="bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600 transition">
+                                    لغو
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600 transition">
+                                    ثبت پیشنهاد
+                                </button>
                             </div>
                         </div>
                     </div>
                 </form>
             )}
+
         </>
     );
 }
