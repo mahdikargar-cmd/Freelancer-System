@@ -1,16 +1,19 @@
 "use client"
-import React, {useEffect, useState} from "react";
+import React, {useEffect, useState, useCallback, useRef} from "react";
 import {useRouter} from "next/navigation";
 import io from "socket.io-client";
 import {FreelancerM} from "../../../Components/Messages/FreelancerM";
 import {KarfarmaM} from "../../../Components/Messages/KarfarmaM";
 import {useAuth} from "../../context/AuthContext";
 import axios from "axios";
+import {toast} from "react-hot-toast";
+import {MessageCircle, Send, Lock, Unlock, Loader2, Menu, X} from "lucide-react"; // Changed X to XIcon
+import '../../../public/style/styleMEssage.css'
 
 let socket;
 
 function Message() {
-    const { isLoggedIn } = useAuth();
+    const {isLoggedIn} = useAuth();
     const router = useRouter();
     const [isMounted, setIsMounted] = useState(false);
     const [freelancerM, setFreelancerM] = useState(false);
@@ -21,64 +24,106 @@ function Message() {
     const [selectedSuggestion, setSelectedSuggestion] = useState(null);
     const [aiLocked, setAiLocked] = useState(false);
     const [userRole, setUserRole] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const messagesEndRef = useRef(null);
+    const [sidebarOpen, setSidebarOpen] = useState(true);
+    // ... (all other existing states remain the same)
 
+    // Toggle sidebar for mobile
+    const toggleSidebar = () => {
+        setSidebarOpen(!sidebarOpen);
+    };
+
+    // Auto scroll to bottom when new messages arrive
+    const scrollToBottom = () => {
+        messagesEndRef.current?.scrollIntoView({behavior: "smooth"});
+    };
+
+    useEffect(() => {
+        scrollToBottom();
+    }, [chatMessages]);
+
+    // Initialize socket and load AI status
     useEffect(() => {
         setIsMounted(true);
         socket = io("http://localhost:5000");
-    }, []);
 
-    useEffect(() => {
-        if (isMounted && !isLoggedIn) {
-            router.push("/login");
-        }
-    }, [isMounted, isLoggedIn]);
-
-    useEffect(() => {
-        if (socket) {
-            socket.on("receiveMessage", (messageData) => {
-                setChatMessages((prev) => [...prev, messageData]);
-            });
-        }
         return () => {
             if (socket) {
                 socket.disconnect();
             }
         };
     }, []);
-   useEffect(() => {
-    const role = localStorage.getItem("userRole");
-    if (role) setUserRole(role);
-}, []);
 
-    
+    // Authentication check
+    useEffect(() => {
+        if (isMounted && !isLoggedIn) {
+            router.push("/login");
+        }
+    }, [isMounted, isLoggedIn, router]);
+
+    // Load user role
+    useEffect(() => {
+        const role = localStorage.getItem("userRole");
+        if (role) {
+            setUserRole(role);
+        }
+    }, [isMounted, isLoggedIn]);
+
+    // Socket message handler
+    useEffect(() => {
+        if (socket) {
+            socket.on("receiveMessage", (messageData) => {
+                setChatMessages((prev) => [...prev, messageData]);
+            });
+
+            socket.on("error", (error) => {
+                toast.error(error.message);
+            });
+        }
+    }, []);
+
+    // Load project messages and AI status
+    const loadProjectData = useCallback(async (projectId) => {
+        setIsLoading(true);
+        try {
+            // Load messages
+            const messagesResponse = await axios.get(`http://localhost:5000/api/messages/project/${projectId}`);
+            setChatMessages(messagesResponse.data.map(msg => ({
+                ...msg,
+                senderRole: msg.role
+            })));
+
+            // Load AI status
+            const statusResponse = await axios.get(`http://localhost:5000/api/toggleAI/status/${projectId}`);
+            const newAiLockedStatus = statusResponse.data.aiLocked;
+            setAiLocked(newAiLockedStatus);
+            localStorage.setItem(`aiStatus_${projectId}`, newAiLockedStatus.toString());
+
+            // Verify AI status consistency
+            await axios.get(`http://localhost:5000/api/toggleAI/verify/${projectId}`);
+        } catch (error) {
+            toast.error("خطا در بارگذاری اطلاعات پروژه");
+            console.error("Error loading project data:", error);
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
+
+    // Handle project selection
     useEffect(() => {
         if (selectedSuggestion) {
-            axios
-                .get(`http://localhost:5000/api/messages/project/${selectedSuggestion._id}`)
-                .then(response => {
-                    setChatMessages(response.data.map(msg => ({
-                        ...msg,
-                        senderRole: msg.role
-                    })));
-                })
-                .catch(error => console.error("Error loading messages:", error));
-    
-            // دریافت وضعیت هوش مصنوعی
-            axios.get(`http://localhost:5000/api/toggleAI/status/${selectedSuggestion._id}`)
-                .then(statusResponse => {
-                    setAiLocked(statusResponse.data);
-                })
-                .catch(error => console.error("Error fetching AI status:", error));
+            localStorage.setItem("currentProjectId", selectedSuggestion._id);
+            loadProjectData(selectedSuggestion._id);
         }
-    }, [selectedSuggestion]);
-    
-    
+    }, [selectedSuggestion, loadProjectData]);
 
     const FreelancerMessage = () => {
         setFreelancerM(true);
         setKarfarmaM(false);
         setIsChatActive(true);
         localStorage.setItem("userRole", "freelancer");
+        setUserRole("freelancer");
     };
 
     const KarfarmaMessageToggle = () => {
@@ -86,6 +131,7 @@ function Message() {
         setFreelancerM(false);
         setIsChatActive(true);
         localStorage.setItem("userRole", "employer");
+        setUserRole("employer");
     };
 
     const handleSuggestionClick = (suggestion) => {
@@ -93,165 +139,250 @@ function Message() {
         setIsChatActive(true);
     };
 
-    const sendMessage = () => {
+    const sendMessage = async () => {
+        if (!message.trim() || !selectedSuggestion) return;
+
         const role = localStorage.getItem("userRole");
-    
-        // اگر هوش مصنوعی قفل باشد و نقش کاربر فریلنسر باشد، پیام ارسال نمی‌شود
+
+        // Check if AI is locked for freelancer
         if (aiLocked && role === "freelancer") {
-            console.log("هوش مصنوعی غیرفعال است، پیام فریلنسر پردازش نمی‌شود.");
-            setChatMessages((prev) => [...prev, { content: message, senderRole: role }]); // پیام فقط در چت نمایش داده می‌شود
-            setMessage("");
-            return;
+            toast.error("هوش مصنوعی غیرفعال است. پیام شما فقط ذخیره می‌شود.");
         }
-    
-        if (socket && message.trim() && selectedSuggestion) {
+
+        try {
             const messageData = {
                 content: message,
                 projectId: selectedSuggestion._id,
                 employerId: selectedSuggestion.user,
                 senderRole: role,
             };
-    
+
             socket.emit("sendMessage", messageData);
-            setChatMessages((prev) => [...prev, { ...messageData, senderRole: role }]);
             setMessage("");
-        } else {
-            console.error("Some required parameters are missing", { message, selectedSuggestion });
+
+            // Optimistically add message to UI
+            setChatMessages((prev) => [...prev, {...messageData, senderRole: role}]);
+        } catch (error) {
+            toast.error("خطا در ارسال پیام");
+            console.error("Error sending message:", error);
         }
     };
-    
-    
-    
+
     const toggleAi = async () => {
         if (!selectedSuggestion) {
-            console.error("No project selected");
+            toast.error("لطفا یک پروژه را انتخاب کنید");
             return;
         }
-    
+
+        setIsLoading(true);
         try {
             const projectId = selectedSuggestion._id;
-            const response = await axios.post("http://localhost:5000/api/toggleAI", { projectId });
-            setAiLocked(response.data);
+            const newAiLockStatus = !aiLocked;
+
+            const response = await axios.post("http://localhost:5000/api/toggleAI", {
+                projectId,
+                aiLocked: newAiLockStatus
+            });
+
+            setAiLocked(response.data.aiLocked);
+            localStorage.setItem(`aiStatus_${projectId}`, response.data.aiLocked.toString());
+
+            toast.success(response.data.aiLocked ?
+                "هوش مصنوعی غیرفعال شد" :
+                "هوش مصنوعی فعال شد"
+            );
         } catch (error) {
+            toast.error("خطا در تغییر وضعیت هوش مصنوعی");
             console.error("Error toggling AI:", error);
+        } finally {
+            setIsLoading(false);
         }
     };
-    
-    
-    
 
     const renderToggleButton = () => {
         if (userRole === "employer" && selectedSuggestion) {
             return (
-                <button onClick={toggleAi}>
-                    {aiLocked ? "فعال کردن هوش مصنوعی" : "غیرفعال کردن هوش مصنوعی"}
+                <button
+                    onClick={toggleAi}
+                    disabled={isLoading}
+                    className={`${
+                        isLoading ? 'bg-gray-400' : 'bg-gray-500 hover:bg-gray-600'
+                    } text-white p-2 mx-2 rounded-md transition-colors duration-200`}
+                >
+                    {isLoading ? "در حال پردازش..." :
+                        aiLocked ? "فعال کردن هوش مصنوعی" : "غیرفعال کردن هوش مصنوعی"}
                 </button>
             );
         }
         return null;
     };
-    
-    
-    useEffect(() => {
-        if (isMounted) {
-            socket = io("http://localhost:5000");
-            socket.on("receiveMessage", (messageData) => {
-                setChatMessages((prev) => [...prev, messageData]);
-            });
-        }
-        return () => {
-            if (socket) {
-                socket.disconnect();
-            }
-        };
-    }, [isMounted]);
-    
-    
 
-
-    
     if (!isMounted || !isLoggedIn) return null;
 
+
     return (
-        <div className={"mt-4 pb-5 flex justify-center"}>
-            <div className={"bg-amber-50 w-[1000px] h-[90vh]"}>
-                <div className={"grid grid-cols-12"}>
-                    <div className={"col-span-12 flex justify-center mt-4"}>
-                        <p className={"text-2xl font-bold"}>پیام های من</p>
-                    </div>
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-amber-50 p-2 md:p-4">
+            <div className="max-w-7xl mx-auto bg-white rounded-lg shadow-xl overflow-hidden">
+                {/* Header */}
+                <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+                    <button
+                        className="md:hidden text-gray-600 hover:text-gray-900"
+                        onClick={() => setSidebarOpen(!sidebarOpen)}
+                    >
+                        {sidebarOpen ? '✕' : '☰'}
+                    </button>
+                    <h1 className="text-2xl font-bold text-center text-gray-800 flex-1">پیام های من</h1>
                 </div>
-                <div className={"grid grid-cols-12 h-[500px] m-4"}>
-                    <div className={"col-span-4 flex flex-col"}>
-                        <div className={"flex justify-evenly ml-2"}>
-                            <button onClick={FreelancerMessage} className={"bg-gray-600 p-2 rounded-full text-white"}>
-                                پیام های فریلنسری
-                            </button>
-                            <button onClick={KarfarmaMessageToggle}
-                                    className={"bg-gray-600 p-2 rounded-full text-white"}>
-                                پیام های کارفرمایی
-                            </button>
+
+                <div className="flex h-[calc(100vh-6rem)]">
+                    {/* Sidebar */}
+                    <div className={`${
+                        sidebarOpen ? 'translate-x-0' : 'translate-x-full md:translate-x-0'
+                    } fixed md:relative md:w-80 right-0 top-0 h-full bg-gray-50 border-l transform transition-transform duration-300 ease-in-out md:transform-none z-50`}>
+                        <div className="p-4 h-full overflow-y-auto">
+                            {/* Role Selection Buttons */}
+                            <div className="flex flex-col gap-2 mb-4">
+                                <button
+                                    onClick={FreelancerMessage}
+                                    className={`flex items-center justify-center p-3 rounded-lg font-medium transition-all ${
+                                        freelancerM ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                    }`}
+                                >
+                                    <span className="mr-2">💬</span>
+                                    پیام های فریلنسری
+                                </button>
+                                <button
+                                    onClick={KarfarmaMessageToggle}
+                                    className={`flex items-center justify-center p-3 rounded-lg font-medium transition-all ${
+                                        karfarmaM ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                    }`}
+                                >
+                                    <span className="mr-2">💬</span>
+                                    پیام های کارفرمایی
+                                </button>
+                            </div>
+
+                            {/* Message Lists */}
+                            <div className="h-full overflow-y-auto">
+                                {freelancerM && (
+                                    <FreelancerM onSuggestionClick={(suggestion) => {
+                                        handleSuggestionClick(suggestion);
+                                        setSidebarOpen(false);
+                                    }} />
+                                )}
+                                {karfarmaM && (
+                                    <KarfarmaM onSuggestionClick={(suggestion) => {
+                                        handleSuggestionClick(suggestion);
+                                        setSidebarOpen(false);
+                                    }} />
+                                )}
+                            </div>
                         </div>
-                        {freelancerM && <FreelancerM onSuggestionClick={handleSuggestionClick}/>}
-                        {karfarmaM && <KarfarmaM onSuggestionClick={handleSuggestionClick}/>}
                     </div>
-                    <div className={`col-span-8 bg-gray-200 chat ${isChatActive ? "" : "hidden"}`}>
+
+                    {/* Chat Area */}
+                    <div className="flex-1 flex flex-col h-full">
                         {selectedSuggestion ? (
-                            <div>
-                                <div className={"border-amber-200 border-2 bg-white m-6 rounded-full p-4"}>
-                                    <div className={"grid grid-cols-12"}>
-                                        <div className={"col-span-12 flex justify-center"}>
-                                            <h3>پیشنهاد پروژه: {selectedSuggestion.subject}</h3>
-                                        </div>
+                            <>
+                                {/* Project Info */}
+                                <div className="p-4 bg-white border-b">
+                                    <h3 className="text-lg font-bold mb-2">{selectedSuggestion.subject}</h3>
+                                    <div className="flex justify-between text-sm text-gray-600 mb-2">
+                                        <span>قیمت: {selectedSuggestion.price} تومان</span>
+                                        <span>مدت زمان: {selectedSuggestion.deadline} روز</span>
                                     </div>
-                                    <div className="grid grid-cols-12">
-                                        <div className={"col-span-12 flex justify-between"}>
-                                            <p>قیمت: {selectedSuggestion.price}</p>
-                                            <p>مدت زمان: {selectedSuggestion.deadline} روز</p>
-                                        </div>
-                                    </div>
-                                    <div className="grid grid-cols-12">
-                                        <div className={"col-span-12 pb-4 p-2"}>
-                                            <p>توضیحات: {selectedSuggestion.description}</p>
-                                        </div>
-                                    </div>
+                                    <p className="text-sm text-gray-700">{selectedSuggestion.description}</p>
                                 </div>
-                                <div
-                                    className="bg-gray-200 chat-content overflow-y-scroll h-[250px] p-4 bg-gray-100 flex flex-col">
-                                    {chatMessages.map((msg, index) => (
-                                        <div
-                                            key={index}
-                                            className={`p-2 w-[300px] my-2 rounded-md  ${
-                                                msg.senderRole === "freelancer" ? "bg-blue-200 self-start text-right" : "bg-green-200 self-end text-left"
+
+                                {/* Messages */}
+                                <div className="flex-1 overflow-y-auto p-4 bg-gray-50" ref={messagesEndRef}>
+                                    {isLoading ? (
+                                        <div className="flex justify-center items-center h-full">
+                                            <div className="animate-spin">⌛</div>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-4">
+                                            {chatMessages.map((msg, index) => (
+                                                <div
+                                                    key={index}
+                                                    className={`flex ${
+                                                        msg.senderRole === "freelancer"
+                                                            ? "justify-start"
+                                                            : msg.senderRole === "system"
+                                                                ? "justify-center"
+                                                                : "justify-end"
+                                                    }`}
+                                                >
+                                                    <div className={`max-w-[70%] rounded-xl p-3 shadow ${
+                                                        msg.senderRole === "freelancer"
+                                                            ? "bg-blue-500 text-white"
+                                                            : msg.senderRole === "system"
+                                                                ? "bg-yellow-100 text-gray-800"
+                                                                : "bg-gray-200 text-gray-800"
+                                                    }`}>
+                                                        <p className="mb-1 break-words">{msg.content}</p>
+                                                        <span className={`text-xs ${
+                                                            msg.senderRole === "freelancer"
+                                                                ? "text-blue-100"
+                                                                : "text-gray-600"
+                                                        }`}>
+                                                            {msg.senderRole === "freelancer" ? "فریلنسر" :
+                                                                msg.senderRole === "employer" ? "کارفرما" : "هوش مصنوعی"}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Input Area */}
+                                <div className="p-4 bg-white border-t">
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="text"
+                                            value={message}
+                                            onChange={(e) => setMessage(e.target.value)}
+                                            onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                                            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                                            placeholder="پیام خود را بنویسید..."
+                                            disabled={isLoading}
+                                        />
+
+                                        {userRole === "employer" && (
+                                            <button
+                                                onClick={toggleAi}
+                                                disabled={isLoading}
+                                                className={`p-2 rounded-lg ${
+                                                    isLoading
+                                                        ? 'bg-gray-300'
+                                                        : 'bg-gray-100 hover:bg-gray-200'
+                                                }`}
+                                            >
+                                                {aiLocked ? '🔒' : '🔓'}
+                                            </button>
+                                        )}
+
+                                        <button
+                                            onClick={sendMessage}
+                                            disabled={isLoading || !message.trim()}
+                                            className={`p-2 rounded-lg transition-all ${
+                                                isLoading || !message.trim()
+                                                    ? 'bg-gray-300 cursor-not-allowed'
+                                                    : 'bg-blue-500 hover:bg-blue-600 text-white'
                                             }`}
                                         >
-                                            <p>{msg.content}</p>
-                                            <span className="text-sm text-gray-600">
-                                                فرستنده: {
-                                                msg.senderRole === "freelancer" ? "فریلنسر" :
-                                                    msg.senderRole === "employer" ? "کارفرما" :
-                                                        "هوش مصنوعی"
-                                            }
-                                            </span>
-                                        </div>
-                                    ))}
+                                            ➤
+                                        </button>
+                                    </div>
                                 </div>
-                                <div className="flex mt-4 mb-3 pl-3 ps-3">
-                                    <input
-                                        type="text"
-                                        value={message}
-                                        onChange={(e) => setMessage(e.target.value)}
-                                        className="flex-grow p-2 border rounded-l-md"
-                                        placeholder="پیام خود را بنویسید..."
-                                    />
-                                    {renderToggleButton()}
-                                    <button onClick={sendMessage} className="bg-blue-500 text-white p-2 rounded-r-md">
-                                        ارسال پیام
-                                    </button>
-                                </div>
-                            </div>
+                            </>
                         ) : (
-                            <div className="flex justify-center items-center h-full">
-                                <p>لطفا یک پیشنهاد پروژه را برای شروع گفتگو انتخاب کنید</p>
+                            <div className="flex-1 flex items-center justify-center bg-gray-50">
+                                <div className="text-center text-gray-500">
+                                    <div className="text-4xl mb-4">💬</div>
+                                    <p>لطفا یک پیشنهاد پروژه را برای شروع گفتگو انتخاب کنید</p>
+                                </div>
                             </div>
                         )}
                     </div>
