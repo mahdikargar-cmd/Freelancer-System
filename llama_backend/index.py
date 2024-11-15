@@ -1,10 +1,27 @@
 from flask import Flask, request, jsonify
 from transformers import pipeline, AutoTokenizer
 import torch
+from pymongo import MongoClient
+import logging
+import re
+from bson import ObjectId
 
 app = Flask(__name__)
 
-# Model Setup
+# تنظیمات لاگ
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
+
+# اتصال به MongoDB
+try:
+    client = MongoClient('mongodb://localhost:27017/')
+    db = client['freelancer'] 
+    projects_collection = db['suggestprojects']  
+    logger.debug("Successfully connected to MongoDB")
+except Exception as e:
+    logger.error(f"Failed to connect to MongoDB: {str(e)}")
+
+# تنظیمات مدل
 model_id = "meta-llama/Llama-3.2-1B"
 pipe = pipeline("text-generation", model=model_id, device="cpu")
 tokenizer = AutoTokenizer.from_pretrained(model_id)
@@ -12,195 +29,104 @@ tokenizer = AutoTokenizer.from_pretrained(model_id)
 class AIChatAssessment:
     def __init__(self):
         self.chat_states = {}
-        self.questions = [
-            "لطفاً در مورد تجربیات قبلی خود در پروژه‌های مشابه فروشگاهی توضیح دهید. چه چالش‌هایی داشتید و چطور آنها را حل کردید؟",
-            "چگونه امنیت سایت فروشگاهی و تراکنش‌های مالی را تضمین می‌کنید؟",
-            "برای بهینه‌سازی عملکرد سایت در زمان‌های پربازدید چه راهکارهایی را پیاده‌سازی می‌کنید؟"
-        ]
-
-    def _generate_web_questions(self, context):
-        prompt = f"""با توجه به توضیحات پروژه و پاسخ‌های قبلی:
-        {context}
         
-        یک سوال تخصصی درباره توسعه وب مطرح کنید که موارد زیر را پوشش دهد:
-        - مهارت‌های فنی
-        - تجربیات قبلی
-        - روش‌های حل مسئله
-        - بهترین شیوه‌های توسعه
-        """
-        response = pipe(prompt, max_length=200, truncation=True, pad_token_id=tokenizer.eos_token_id)
-        print("AI raw response:", response)  # Debugging the raw response
-        generated_text = response[0]['generated_text']
-        print("Generated text:", generated_text)  # Print the generated text
-        return generated_text.split("\n")[-1].strip()
-
-    def _generate_mobile_questions(self, context):
-        prompt = f"""با توجه به توضیحات پروژه و پاسخ‌های قبلی:
-        {context}
+    def load_project_data(self, project_id):
+        """دریافت اطلاعات پروژه از MongoDB"""
+        try:
+            logging.debug(f"Attempting to load project with ID: {project_id}")
         
-        یک سوال تخصصی درباره توسعه موبایل مطرح کنید که موارد زیر را پوشش دهد:
-        - تجربه توسعه نیتیو و کراس پلتفرم
-        - بهینه‌سازی عملکرد
-        - مدیریت حافظه و باتری
-        - تست و دیباگ
-        """
-        response = pipe(prompt, max_length=200, truncation=True, pad_token_id=tokenizer.eos_token_id)
-        print("AI raw response:", response)  # Debugging the raw response
-        generated_text = response[0]['generated_text']
-        print("Generated text:", generated_text)  # Print the generated text
-        return generated_text.split("\n")[-1].strip()
-
-    def _generate_default_questions(self, context):
-        prompt = f"""با توجه به توضیحات پروژه و پاسخ‌های قبلی:
-        {context}
+            project = projects_collection.find_one({"_id": ObjectId(project_id)})
         
-        یک سوال مناسب برای ارزیابی توانایی‌های فریلنسر مطرح کنید که شامل:
-        - مهارت‌های فنی
-        - مدیریت پروژه
-        - حل مسئله
-        - ارتباطات و همکاری
-        """
-        response = pipe(prompt, max_length=200, truncation=True, pad_token_id=tokenizer.eos_token_id)
-        print("AI raw response:", response)  # Debugging the raw response
-        generated_text = response[0]['generated_text']
-        print("Generated text:", generated_text)  # Print the generated text
-        return generated_text.split("\n")[-1].strip()
-
-    def evaluate_answer(self, answer, project_type, chat_state):
-        # بررسی طول و کیفیت پاسخ
-        words = answer.strip().split()
-        word_count = len(words)
-        
-        # کلمات کلیدی برای هر حوزه تخصصی
-        technical_keywords = {
-            'security': ['ssl', 'jwt', 'hash', 'bcrypt', 'امنیت', 'رمزنگاری', 'authentication'],
-            'performance': ['کش', 'redis', 'cdn', 'بهینه‌سازی', 'lazy loading', 'indexing'],
-            'experience': ['پروژه', 'تجربه', 'پیاده‌سازی', 'توسعه', 'طراحی'],
-            'database': ['mongodb', 'sql', 'دیتابیس', 'پایگاه داده', 'query'],
-            'frontend': ['react', 'javascript', 'فرانت‌اند', 'ui', 'رابط کاربری'],
-            'backend': ['node', 'express', 'بک‌اند', 'api', 'سرور']
-        }
-
-        # محاسبه امتیاز بر اساس معیارهای مختلف
-        score = 0
-        feedback = ""
-        
-        # 1. بررسی طول پاسخ
-        if word_count < 10:
-            score = 1
-            feedback = "لطفاً توضیحات بیشتری ارائه دهید."
-        else:
-            # 2. بررسی کلمات کلیدی
-            keyword_count = 0
-            detected_areas = set()
-            
-            for area, keywords in technical_keywords.items():
-                for keyword in keywords:
-                    if keyword.lower() in answer.lower():
-                        keyword_count += 1
-                        detected_areas.add(area)
-            
-            # امتیازدهی بر اساس تنوع حوزه‌های تخصصی و کلمات کلیدی
-            score = min(5, 2 + (len(detected_areas) * 0.5) + (keyword_count * 0.2))
-            
-            # تولید فیدبک متناسب با امتیاز
-            if score >= 4:
-                feedback = "پاسخ شما نشان‌دهنده تسلط خوب در این زمینه است. "
-                if chat_state['question_count'] < len(self.questions):
-                    feedback += "لطفاً به سوال بعدی نیز پاسخ دهید."
-            elif score >= 3:
-                feedback = "پاسخ شما خوب است، اما جزئیات بیشتری می‌تواند مفید باشد. "
-            elif score >= 2:
-                feedback = "لطفاً درباره تجربیات عملی خود در این زمینه توضیح بیشتری دهید."
+            if project:
+                logging.debug(f"Project loaded successfully: {project}")
             else:
-                feedback = "به نظر می‌رسد نیاز به تجربه بیشتری در این زمینه دارید."
-
-        # تعیین سوال بعدی
-        next_question = None
-        if chat_state['question_count'] < len(self.questions) and score >= 2:
-            next_question = self.questions[chat_state['question_count']]
-
-        return {
-            "feedback": feedback,
-            "next_question": next_question,
-            "score": score,
-            "is_complete": chat_state['question_count'] >= len(self.questions) or score < 2
-        }
-        context = chat_state.get('context', '')
-        context += f"\nپاسخ فریلنسر: {answer}"
+                logging.debug("No project found with the given ID.")
         
-        evaluation_prompt = f"""با توجه به پاسخ فریلنسر:
-        {answer}
-        
-        لطفاً این پاسخ را ارزیابی کنید و موارد زیر را مشخص کنید:
-        1. میزان تسلط فنی
-        2. تجربه عملی
-        3. درک صحیح از نیازمندی‌ها
-        4. نقاط قوت و ضعف
-        """
-        
-        response = pipe(evaluation_prompt, max_length=300, truncation=True, pad_token_id=tokenizer.eos_token_id)
-        print("AI raw evaluation response:", response)  # Debugging evaluation response
-        generated_text = response[0]['generated_text']
-        print("Generated evaluation text:", generated_text)  # Print the evaluation response
-        
-        score = self._calculate_score(generated_text, answer)
-        
-        # Generate feedback and next question
-        feedback, next_question = "", None
-        if score >= 4:
-            feedback = "پاسخ شما نشان‌دهنده تسلط خوب شما در این زمینه است."
-            next_question = self._get_next_question(project_type, context) if chat_state['question_count'] < 3 else None
-        elif score >= 2:
-            feedback = "لطفاً جزئیات بیشتری در مورد تجربیات عملی خود ارائه دهید."
-            next_question = self._get_next_question(project_type, context)
-        else:
-            feedback = "به نظر می‌رسد نیاز به تجربه بیشتری در این زمینه دارید."
+            return project if project else {}
+    
+        except Exception as e:
+            logging.error(f"Error loading project data: {e}")
+            return {}
 
-        return {
-            "feedback": feedback,
-            "next_question": next_question,
-            "score": score,
-            "is_complete": chat_state['question_count'] >= 3 or score < 2
-        }
+    def generate_dynamic_questions(self, project_data):
+        """تولید سوالات بر اساس اطلاعات پروژه"""
+        questions = []
+        
+        # استخراج اطلاعات کلیدی پروژه
+        subject = project_data.get('subject', '')
+        description = project_data.get('description', '')
+        price = project_data.get('price', 0)
+        deadline = project_data.get('deadline', 0)
+        
+        # سوالات در مورد موضوع پروژه
+        questions.append(f"با توجه به موضوع پروژه '{subject}'، چگونه می‌توانید این پروژه را پیاده‌سازی کنید؟")
+        
+        # سوالات درباره تخصص فنی بر اساس توضیحات پروژه
+        tech_keywords = self.extract_technical_keywords(description)
+        if tech_keywords:
+            questions.append(f"لطفاً تجربه خود را در زمینه {', '.join(tech_keywords)} توضیح دهید.")
+        
+        # سوالات درباره بودجه و زمان‌بندی
+        if price > 0:
+            questions.append(f"آیا بودجه {price} تومان برای این پروژه از نظر شما منطقی است؟ لطفاً دلیل خود را توضیح دهید.")
+        
+        if deadline > 0:
+            questions.append(f"چگونه می‌توانید پروژه را در مدت {deadline} روز تکمیل کنید؟ برنامه زمان‌بندی خود را شرح دهید.")
+        
+        # سوالات ویژه برای پروژه‌های خاص
+        if "فروشگاه" in description.lower():
+            questions.extend([
+                "چه راهکارهایی برای امنیت و پرداخت آنلاین پیشنهاد می‌کنید؟",
+                "تجربه قبلی شما در پیاده‌سازی فروشگاه‌های آنلاین چیست؟"
+            ])
+        elif "اپلیکیشن" in description.lower():
+            questions.extend([
+                "استراتژی شما برای تست و کنترل کیفیت اپلیکیشن چیست؟",
+                "چگونه مقیاس‌پذیری و عملکرد اپلیکیشن را تضمین می‌کنید؟"
+            ])
+        
+        logging.debug(f"Generated questions: {questions}")
+        return questions
 
-    def _calculate_score(self, evaluation, answer):
-        score = 0
-        if len(answer.split()) >= 50:
-            score += 2
-        technical_keywords = ["framework", "api", "database", "امنیت", "بهینه‌سازی", 
-                              "معماری", "الگوریتم", "کدنویسی", "تست", "دیباگ"]
-        for keyword in technical_keywords:
-            if keyword in answer.lower():
-                score += 0.5
-        if "برای مثال" in answer or "به عنوان نمونه" in answer:
-            score += 1
-        return min(score, 5)
+    def extract_technical_keywords(self, text):
+        """استخراج کلمات کلیدی فنی از متن"""
+        keywords = set()
+        common_tech_terms = [
+            "React", "Node.js", "Python", "Java", "MongoDB",
+            "SQL", "REST API", "Docker", "AWS", "Frontend",
+            "Backend", "Full-stack", "UI/UX", "DevOps"
+        ]
+        
+        for term in common_tech_terms:
+            if term.lower() in text.lower():
+                keywords.add(term)
+                
+        return list(keywords)
 
-    def _get_next_question(self, project_type, context):
-        question_generator = self.assessment_questions.get(project_type, self.assessment_questions["default"])
-        return question_generator(context)
-
-    def start_assessment(self, project_id, project_type):
+    def start_assessment(self, project_id):
+        """شروع جلسه ارزیابی"""
         if project_id not in self.chat_states:
+            project_data = self.load_project_data(project_id)
+            questions = self.generate_dynamic_questions(project_data)
             self.chat_states[project_id] = {
                 'question_count': 0,
-                'context': '',
-                'scores': []
+                'questions': questions,
+                'scores': [],
+                'project_data': project_data
             }
         return {
-            "question": self.questions[0],
+            "question": self.chat_states[project_id]['questions'][0],
             "chat_state": self.chat_states[project_id]
         }
 
 @app.route('/analyze_project', methods=['POST'])
 def analyze_project():
+    """شروع تحلیل پروژه"""
     data = request.get_json()
     project_id = data.get('projectId')
-    project_type = data.get('projectType', 'default')
     
     assessor = AIChatAssessment()
-    result = assessor.start_assessment(project_id, project_type)
+    result = assessor.start_assessment(project_id)
     
     return jsonify({
         "status": "success",
@@ -208,60 +134,45 @@ def analyze_project():
         "chat_state": result["chat_state"]
     })
 
-# در فایل Flask، تغییرات زیر را اعمال کنید:
-
 @app.route('/evaluate_answer', methods=['POST'])
 def evaluate_answer():
+    """ارزیابی پاسخ فریلنسر"""
     try:
         data = request.get_json()
-        if not data:
-            return jsonify({
-                "status": "error",
-                "message": "No data provided"
-            }), 400
-
         answer = data.get('answer')
         context = data.get('context', {})
-        
-        if not answer or not context:
-            return jsonify({
-                "status": "error",
-                "message": "Missing required fields"
-            }), 400
-
-        project_type = context.get('projectType', 'default')
         project_id = context.get('projectId')
         
-        if not project_id:
-            return jsonify({
-                "status": "error",
-                "message": "Project ID is required"
-            }), 400
-
         assessor = AIChatAssessment()
         
-        # اگر وضعیت چت برای این پروژه وجود ندارد، آن را ایجاد کنید
         if project_id not in assessor.chat_states:
-            assessor.start_assessment(project_id, project_type)
+            assessor.start_assessment(project_id)
             
         chat_state = assessor.chat_states[project_id]
         chat_state['question_count'] += 1
         
-        evaluation = assessor.evaluate_answer(answer, project_type, chat_state)
+        project_data = assessor.load_project_data(project_id)
+        
+        # فرضی، می‌توانید تابع ارزیابی جواب و تعیین نمره را براساس نیازهای خود پیاده‌سازی کنید
+        feedback = "پاسخ شما مفید بود. لطفاً به سوال بعدی پاسخ دهید."
+        next_question = chat_state['questions'][chat_state['question_count']] if chat_state['question_count'] < len(chat_state['questions']) else None
+        is_complete = chat_state['question_count'] >= len(chat_state['questions'])
+        score = 10  # نمونه نمره، که می‌توانید بر اساس پاسخ‌ها تنظیم کنید
         
         return jsonify({
             "status": "success",
-            "feedback": evaluation["feedback"],
-            "next_question": evaluation["next_question"],
-            "is_complete": evaluation["is_complete"],
-            "score": evaluation["score"]
+            "feedback": feedback,
+            "next_question": next_question,
+            "is_complete": is_complete,
+            "score": score
         })
 
     except Exception as e:
-        print(f"Error in evaluate_answer: {str(e)}")  # اضافه کردن لاگ خطا
+        logging.error(f"Error in evaluate_answer: {str(e)}")
         return jsonify({
             "status": "error",
             "message": f"Internal server error: {str(e)}"
         }), 500
+
 if __name__ == "__main__":
     app.run(port=5001, debug=True)

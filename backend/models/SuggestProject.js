@@ -6,6 +6,11 @@ const SuggestProjectSchema = new mongoose.Schema({
         ref: 'User',
         required: true
     },
+    projectId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Project',
+        required: true
+    },
     subject: {
         type: String,
         required: true
@@ -14,6 +19,12 @@ const SuggestProjectSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    role: {
+        type: String,
+        enum: ['freelancer'],
+        required: true
+    }
+    ,
     price: {
         type: Number,
         required: true

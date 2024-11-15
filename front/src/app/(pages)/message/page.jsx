@@ -7,7 +7,6 @@ import {KarfarmaM} from "../../../Components/Messages/KarfarmaM";
 import {useAuth} from "../../context/AuthContext";
 import axios from "axios";
 import {toast} from "react-hot-toast";
-import {MessageCircle, Send, Lock, Unlock, Loader2, Menu, X} from "lucide-react"; // Changed X to XIcon
 import '../../../public/style/styleMEssage.css'
 
 let socket;
@@ -27,12 +26,7 @@ function Message() {
     const [isLoading, setIsLoading] = useState(false);
     const messagesEndRef = useRef(null);
     const [sidebarOpen, setSidebarOpen] = useState(true);
-    // ... (all other existing states remain the same)
 
-    // Toggle sidebar for mobile
-    const toggleSidebar = () => {
-        setSidebarOpen(!sidebarOpen);
-    };
 
     // Auto scroll to bottom when new messages arrive
     const scrollToBottom = () => {
@@ -87,23 +81,13 @@ function Message() {
     const loadProjectData = useCallback(async (projectId) => {
         setIsLoading(true);
         try {
-            // Load messages
             const messagesResponse = await axios.get(`http://localhost:5000/api/messages/project/${projectId}`);
             setChatMessages(messagesResponse.data.map(msg => ({
                 ...msg,
                 senderRole: msg.role
             })));
-
-            // Load AI status
-            const statusResponse = await axios.get(`http://localhost:5000/api/toggleAI/status/${projectId}`);
-            const newAiLockedStatus = statusResponse.data.aiLocked;
-            setAiLocked(newAiLockedStatus);
-            localStorage.setItem(`aiStatus_${projectId}`, newAiLockedStatus.toString());
-
-            // Verify AI status consistency
-            await axios.get(`http://localhost:5000/api/toggleAI/verify/${projectId}`);
         } catch (error) {
-            toast.error("خطا در بارگذاری اطلاعات پروژه");
+            toast.error("خطا در بارگذاری پیام‌ها");
             console.error("Error loading project data:", error);
         } finally {
             setIsLoading(false);
@@ -144,7 +128,6 @@ function Message() {
 
         const role = localStorage.getItem("userRole");
 
-        // Check if AI is locked for freelancer
         if (aiLocked && role === "freelancer") {
             toast.error("هوش مصنوعی غیرفعال است. پیام شما فقط ذخیره می‌شود.");
         }
@@ -157,11 +140,13 @@ function Message() {
                 senderRole: role,
             };
 
+            // ارسال پیام به سرور از طریق سوکت
             socket.emit("sendMessage", messageData);
             setMessage("");
 
-            // Optimistically add message to UI
+            // افزودن پیام به UI به صورت محلی
             setChatMessages((prev) => [...prev, {...messageData, senderRole: role}]);
+
         } catch (error) {
             toast.error("خطا در ارسال پیام");
             console.error("Error sending message:", error);
@@ -199,23 +184,6 @@ function Message() {
         }
     };
 
-    const renderToggleButton = () => {
-        if (userRole === "employer" && selectedSuggestion) {
-            return (
-                <button
-                    onClick={toggleAi}
-                    disabled={isLoading}
-                    className={`${
-                        isLoading ? 'bg-gray-400' : 'bg-gray-500 hover:bg-gray-600'
-                    } text-white p-2 mx-2 rounded-md transition-colors duration-200`}
-                >
-                    {isLoading ? "در حال پردازش..." :
-                        aiLocked ? "فعال کردن هوش مصنوعی" : "غیرفعال کردن هوش مصنوعی"}
-                </button>
-            );
-        }
-        return null;
-    };
 
     if (!isMounted || !isLoggedIn) return null;
 

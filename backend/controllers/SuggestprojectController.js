@@ -33,28 +33,89 @@ class SuggestProjectController {
     async getEmployerMessages(req, res) {
         try {
             const employerId = req.user?.id;
+            if (!employerId) {
+                return res.status(400).json({ message: 'شناسه کارفرما یافت نشد' });
+            }
 
-            const projects = await Project.find({ user: employerId });
+            // Get projects with population and proper error handling
+            const projects = await Project.find({ user: employerId }).lean();
+            if (!projects || projects.length === 0) {
+                return res.status(404).json({ message: 'هیچ پروژه‌ای برای این کارفرما یافت نشد' });
+            }
+
             const projectIds = projects.map(project => project._id);
 
-            const suggestions = await SuggestProjectModel.find({ projectId: { $in: projectIds } });
-            console.log('Fetched Suggestions:', suggestions); // Log the suggestions before sending them
+            // Get suggestions with populated user data
+            const suggestions = await SuggestProjectModel.find({
+                projectId: { $in: projectIds },
+                role: 'freelancer'
+            })
+                .populate('user', 'name email') // Add fields you want from user
+                .populate('projectId', 'title description') // Add fields you want from project
+                .lean();
+
+            if (!suggestions || suggestions.length === 0) {
+                return res.status(404).json({ message: 'هیچ پیشنهادی برای پروژه‌های شما یافت نشد' });
+            }
+
             res.status(200).json({ suggestions });
         } catch (error) {
             console.error('Error fetching employer messages:', error);
-            res.status(500).json({ message: 'خطا در دریافت پیام‌های کارفرما', error });
+            res.status(500).json({ message: 'خطا در دریافت پیام‌های کارفرما', error: error.message });
         }
     }
-    // دریافت پیام‌های فریلنسر
+
     async getFreelancerMessages(req, res) {
         try {
             const freelancerId = req.user?.id;
-            const suggestions = await SuggestProjectModel.find({ user: freelancerId });
+            if (!freelancerId) {
+                return res.status(400).json({ message: 'شناسه فریلنسر یافت نشد' });
+            }
 
-            res.status(200).json({ suggestions }); // Return suggestions
+            // Get suggestions with populated data
+            const suggestions = await SuggestProjectModel.find({
+                user: freelancerId,
+                role: 'freelancer'
+            })
+                .populate('projectId', 'title description') // Add relevant project fields
+                .lean();
+
+            if (!suggestions || suggestions.length === 0) {
+                return res.status(404).json({ message: 'هیچ پیشنهادی از طرف شما ثبت نشده است' });
+            }
+
+            res.status(200).json({ suggestions });
         } catch (error) {
             console.error('Error fetching freelancer messages:', error);
-            res.status(500).json({ message: 'خطا در دریافت پیام‌های فریلنسر', error });
+            res.status(500).json({ message: 'خطا در دریافت پیام‌های فریلنسر', error: error.message });
+        }
+    }
+
+    async getSuggestProjectById(req, res) {
+        try {
+            const projectId = req.params.id;
+            if (!projectId) {
+                return res.status(400).json({ message: 'شناسه پروژه الزامی است' });
+            }
+
+            // Get project with populated user data
+            const project = await Project.findById(projectId)
+                .populate('user', 'name email')
+                .lean();
+
+            if (!project) {
+                return res.status(404).json({ message: 'پروژه یافت نشد' });
+            }
+
+            // Get all suggestions for this project
+            const suggestions = await SuggestProjectModel.find({ projectId })
+                .populate('user', 'name email')
+                .lean();
+
+            res.status(200).json({ project, suggestions });
+        } catch (error) {
+            console.error('Error in getSuggestProjectById:', error);
+            res.status(500).json({ message: 'خطا در دریافت پروژه', error: error.message });
         }
     }
 
@@ -93,6 +154,28 @@ class SuggestProjectController {
             res.status(200).json(project);
         } catch (error) {
             res.status(500).json({ message: 'خطا در دریافت پروژه', error });
+        }
+    }
+
+    async analyzeProject(req, res) {
+        try {
+            const { projectId } = req.body;
+
+            if (!projectId) {
+                return res.status(400).json({ message: 'شناسه پروژه الزامی است' });
+            }
+
+            // درخواست برای دریافت پاسخ‌ها از Flask API
+            const responses = await askProjectQuestions(projectId);
+
+            if (!responses.length) {
+                return res.status(500).json({ message: 'هیچ سوالی یافت نشد' });
+            }
+
+            res.status(200).json({ responses });
+        } catch (error) {
+            console.error("Error in analyzeProject:", error);
+            res.status(500).json({ message: 'خطا در تحلیل پروژه', error });
         }
     }
 }
