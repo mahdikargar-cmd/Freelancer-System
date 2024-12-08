@@ -8,7 +8,7 @@ const SuggestProjectSchema = new mongoose.Schema({
     },
     projectId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Project',
+        ref: 'CreateProject',
         required: true
     },
     subject: {
